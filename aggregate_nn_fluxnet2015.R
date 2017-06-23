@@ -3,12 +3,12 @@ rm( list=ls(all=TRUE) )
 library( dplyr )
 library( cgwtools )
 
-source( paste( myhome, "/remove_outliers.R", sep="" ) )
+source( "remove_outliers.R" )
 
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')
 ##------------------------------------------------
-successcodes <- read.csv( paste( "/successcodes.csv", sep="" ), as.is = TRUE )
+successcodes <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
 
 ## Manual settings ----------------
@@ -33,9 +33,9 @@ load( "data/overview_data_fluxnet2015_L2.Rdata" )
 ##------------------------------------------------
 ## Get MTE-GPP for all sites
 ##------------------------------------------------
-filn <- paste( myhome, "data/gpp_mte_rf_fluxnet_tramontana/GPP_8Days_4Beni.csv", sep="" )
+filn <- paste( "data/gpp_mte_rf_fluxnet_tramontana/GPP_8Days_4Beni.csv", sep="" )
 if ( file.exists( filn ) ){
-  mte_dl <- read.csv( paste( myhome, "data/gpp_mte_rf_fluxnet_tramontana/GPP_Daily_4Beni.csv", sep="" ), as.is=TRUE )
+  mte_dl <- read.csv( "data/gpp_mte_rf_fluxnet_tramontana/GPP_Daily_4Beni.csv", as.is=TRUE )
   mte_8d <- read.csv( filn, as.is=TRUE )
   avl_data_mte <- TRUE
 } else {
@@ -45,7 +45,7 @@ if ( file.exists( filn ) ){
 ##------------------------------------------------
 ## Check availability of MODIS GPP data
 ##------------------------------------------------
-fillist <- list.files( paste( myhome, "data/modis_gpp_fluxnet_cutouts_tseries/", sep="" ) )
+fillist <- list.files( "data/modis_gpp_fluxnet_cutouts_tseries/" )
 if (length(fillist)==0) {
   avl_data_modis <- FALSE
 } else {
@@ -55,7 +55,7 @@ if (length(fillist)==0) {
 ##------------------------------------------------
 ## Get PRI and CCI for all sites
 ##------------------------------------------------
-filn <- paste( myhome, "data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata", sep="" )
+filn <- paste( "data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata" )
 
 if ( file.exists(filn) ){
 
@@ -153,7 +153,7 @@ for (sitename in do.sites){
   jdx <- jdx + 1
   missing_mte <- FALSE
 
-  infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"
@@ -311,7 +311,7 @@ for (sitename in do.sites){
 
     if (is.element( sitename, mte_8d$Site.code)){
 
-      filn <- paste( "/data/mte_", sitename, ".Rdata", sep="" )
+      filn <- paste( "data/mte_", sitename, ".Rdata", sep="" )
 
       if ( file.exists(filn) && !overwrite_mte ){
 
@@ -397,37 +397,7 @@ for (sitename in do.sites){
         nice$bias_rf[ which( is.infinite( nice$bias_rf ) ) ] <- NA
 
         nice$ratio_obs_mod_dmte  <-  nice$gpp_obs / nice$gpp_rf_daily
-        nice$ratio_obs_mod_dmte[ which(is.infinite(nice$ratio_obs_mod_dmte)) ] <- NA        
-
-
-        # ## Make 'nice' dataframe conform with 'mte'
-        # nice_to_dmte <- c()
-        # for (idx in 1:nrow(mte)){
-        #   sub <- dplyr::filter( nice, year_dec==mte$year_dec[idx] )
-        #   year_dec_save <- sub$year_dec[1]
-        #   addline <- unlist( unname( apply( sub, 2, FUN=mean, na.rm=TRUE ) ) )
-        #   # addline[1] <- year_dec_save
-        #   nice_to_dmte <- rbind( nice_to_dmte, addline )
-        # }
-
-        # nice_to_dmte <- as.data.frame( nice_to_dmte )
-        # colnames( nice_to_dmte ) <- names( sub )
-        # rownames( nice_to_dmte ) <- NULL
-
-        # mycolnames <- c( "gpp_rf" )
-
-        # for (ivar in mycolnames){
-        #   nice_to_dmte[[ ivar ]] <- mte[[ ivar ]]
-        # }
-
-        # nice_to_dmte$is_drought_byvar <- with( nice_to_dmte, ifelse( is_drought_byvar<0.5, FALSE, TRUE ) )
-
-        # ## get bias measure: log( mod / obs )
-        # nice_to_dmte$bias_mte <- nice_to_dmte[[ ivar ]] / nice_to_dmte$gpp_obs
-        # nice_to_dmte$bias_mte[ which( is.infinite( nice_to_dmte$bias_mte ) ) ] <- NA
-
-        # nice_to_dmte$ratio_obs_mod_mte  <-  nice_to_dmte$gpp_obs / nice_to_dmte$gpp_mte
-        # nice_to_dmte$ratio_obs_mod_mte[ which(is.infinite(nice_to_dmte$ratio_obs_mod_mte)) ] <- NA        
+        nice$ratio_obs_mod_dmte[ which(is.infinite(nice$ratio_obs_mod_dmte)) ] <- NA          
 
         ## save to file
         save( nice_to_mte, file=filn )
@@ -454,7 +424,7 @@ for (sitename in do.sites){
   ##------------------------------------------------
   if (avl_data_modis){
 
-    filn <- paste( "/data/modis_", sitename, ".Rdata", sep="" )
+    filn <- paste( "data/modis_", sitename, ".Rdata", sep="" )
 
     if ( file.exists(filn) && !overwrite_modis ){
 
@@ -465,7 +435,7 @@ for (sitename in do.sites){
     } else {
 
       ## prepare 'nice_to_modis'
-      modis <- try( read.csv( paste( myhome, "data/modis_gpp_fluxnet_cutouts_tseries/", sitename, "/gpp_8d_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
+      modis <- try( read.csv( paste( "data/modis_gpp_fluxnet_cutouts_tseries/", sitename, "/gpp_8d_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
       if (class(modis)!="try-error"){
         avl_modisgpp <- TRUE
         modis <- dplyr::rename( modis, gpp_modis=data )

@@ -5,14 +5,11 @@ library(broom)
 library(cluster)
 library(ggplot2)
 
-source( "../add_alpha.R")
+source( "add_alpha.R")
 
 load( file="data/overview_data_fluxnet2015_L3.Rdata" )
 load( file="data/fvar_vs_soilm.Rdata" )
 load( file="data/fitparams.Rdata")
-
-# successcodes <- read.csv( paste( "/successcodes.csv", sep="" ), as.is = TRUE )
-# do.sites <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
 
 siteinfo <- dplyr::select( overview, mysitename, lon, lat, year_start, year_end, classid )
 

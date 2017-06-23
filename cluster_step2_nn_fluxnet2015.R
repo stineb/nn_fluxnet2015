@@ -7,7 +7,7 @@ library(cluster)
 load( file="data/overview_data_fluxnet2015_L4.Rdata" )
 load( file="data/fvar_vs_soilm.Rdata" )
 
-source( paste( "/get_aggresponse_binned.R", sep="" ) )
+source( "get_aggresponse_binned.R" )
 
 ## Use only sites not grouped into cluster 3 or 4 by 'cluster_step1_nn_fluxnet2015' and sites with a significant number of drought days (successcode == 1)
 do.sites <- filter( overview, is.na( finalcluster ) & successcode == 1 ) %>% select( mysitename )

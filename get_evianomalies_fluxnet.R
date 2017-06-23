@@ -3,7 +3,7 @@ get_evianomalies_bysite <- function( sitename, quantile, do.plot=TRUE ){
   require(dplyr)
   require(stats)
 
-  source( paste( myhome, "/get_consecutive.R", sep="" ) )
+  source( "get_consecutive.R" )
 
   # ## debug
   # sitename="FR-Pue"
@@ -11,7 +11,7 @@ get_evianomalies_bysite <- function( sitename, quantile, do.plot=TRUE ){
   # do.plot=TRUE
   # #################
 
-  df <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/evi_modissubsets/evi_modissubset_", sitename, ".csv", sep="" ) )
+  df <- read.csv( paste( "sofun/input_fluxnet2015_sofun/evi_modissubsets/evi_modissubset_", sitename, ".csv", sep="" ) )
 
   df$year_dec <- df$yr + (df$doy-1)/365
 
@@ -28,7 +28,7 @@ get_evianomalies_bysite <- function( sitename, quantile, do.plot=TRUE ){
 
   ## plot EVI
   years <- unique( df$yr )
-  pdf( paste( "/fig_fapar_fluxnet/evi_season_", sitename, ".pdf", sep="" ), width=7, heigh=6 )
+  pdf( paste( "fig_fapar_fluxnet/evi_season_", sitename, ".pdf", sep="" ), width=7, heigh=6 )
   par(las=1)
   plot( c(1,365), c(0,1), type="n", xlab="DOY", ylab="EVI" )
   for (iyr in years){
@@ -87,11 +87,5 @@ get_evianomalies_bysite <- function( sitename, quantile, do.plot=TRUE ){
 
 }
 
-# # siteinfo <- read.csv( "../../../../sofun/input_fluxnet2015_sofun/siteinfo_fluxnet2015_sofun.csv" )
-
-# # for (sitename in siteinfo$mysitename){
-#   sitename <- "FR-Pue"
-#   out_evianomalies <- get_evianomalies_bysite( sitename, quantile=0.03, do.plot=TRUE )  
-# # }
 
 

@@ -11,7 +11,7 @@ get_iwue <- function( et_obs, gpp_obs, vpd, prec ){
   ## return:
   ## IWUE* (1e-3 * Pa g J-1)
   ##--------------------------------------------------------------------
-  source( paste( myhome, "/get_consecutive.R", sep="" ) )
+  source( "get_consecutive.R" )
 
   ## inherent water use efficiency after Beer et al., 2009
   iwue <- gpp_obs * vpd / et_obs * 1e3

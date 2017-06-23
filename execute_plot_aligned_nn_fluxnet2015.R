@@ -1,9 +1,9 @@
-source( paste( "/plot_aligned_nn_fluxnet2015.R", sep="" ) )
+source( "/plot_aligned_nn_fluxnet2015.R" )
 
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')
 ##------------------------------------------------
-siteinfo <- read.csv( paste( "/successcodes.csv", sep="" ), as.is = TRUE )
+siteinfo <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( siteinfo, successcode==1 )$mysitename
 
 ## Manual settings ----------------

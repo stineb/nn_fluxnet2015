@@ -1,4 +1,4 @@
-source( paste( "/nn_fVAR_fluxnet2015.R", sep="" ) )
+source( "nn_fVAR_fluxnet2015.R" )
 
 ## Set this to true if this is to be executed on local machine (not through R CMD BATCH call by job submitted to cluster)
 local_execution <- TRUE
@@ -6,7 +6,7 @@ local_execution <- TRUE
 if (local_execution) {
 
 	## For local execution:
-	siteinfo <- read.csv( paste( "/soilm_data_usability_fluxnet2015.csv", sep="" ), as.is=TRUE )
+	siteinfo <- read.csv( "soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
 	do.sites <- dplyr::filter( siteinfo, code!=0 )$mysitename
 	nam_target  = "lue_obs_evi"
 	use_weights = FALSE

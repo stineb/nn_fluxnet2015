@@ -67,9 +67,9 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
   ## Get NN-soilm-profile data
   if (testprofile){
-    filn <- paste( "./data/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
+    filn <- paste( myhome, "/data/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
   } else {
-    filn <- paste( myhome, "data/nn_fluxnet/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
+    filn <- paste( myhome, "/data/nn_fluxnet/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
   }
 
   deleteagain <- FALSE
@@ -835,9 +835,9 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
       }
 
       if (testprofile){
-        outfil <- paste( "data/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+        outfil <- paste( myhome, "/data/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
       } else {
-        outfil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+        outfil <- paste( myhome, "/data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
       }
 
       print( paste( "writing file with fLUE and all other data into:", outfil ) )

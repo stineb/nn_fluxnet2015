@@ -1,8 +1,8 @@
 library(dplyr)
 library(LSD)
 
-source( paste( myhome, "/analyse_modobs.R", sep="" ) )
-source( paste( myhome, "/remove_outliers.R", sep="" ) )
+source( "analyse_modobs.R" )
+source( "remove_outliers.R" )
 
 lmp <- function (modelobject) {
   if (class(modelobject) != "lm") stop("Not an object of class 'lm' ")

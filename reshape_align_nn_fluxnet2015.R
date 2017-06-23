@@ -11,7 +11,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
 
   require( dplyr )
 
-  source( paste( myhome, "/get_consecutive.R", sep="" ) )	
+  source( "get_consecutive.R" )	
 
 	## check and override if necessary
 	if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
@@ -43,7 +43,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
 	before <- 30
 	after  <- 100
 
-	load( paste("data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
+	load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
 
 	## Bins for different variables
 	fvarbins  <- seq( from=-20, to=40, by=20 )
@@ -60,7 +60,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
   ## load nn_fVAR data and "detatch"
   ##------------------------------------------------
   if (verbose) print("loading nn_fVAR file ...")
-  infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
   df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
 
@@ -204,7 +204,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
       filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
       if (!file.exists(filn)||overwrite){
         if (verbose) print("aligning MODIS ...")
-        filn <- paste( "/data/modis_", sitename, ".Rdata", sep="" )
+        filn <- paste( "data/modis_", sitename, ".Rdata", sep="" )
         error <- try( load( filn ) ) # loads 'nice_to_modis', file prepared in 'plot_nn_fVAR_fluxnet2015.R'
         if (class(error)!="try-error"){
           
@@ -280,7 +280,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
       filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
       if (!file.exists(filn)||overwrite){
         if (verbose) print("aligning MTE ...")
-        filn <- paste( "/data/mte_", sitename, ".Rdata", sep="" )
+        filn <- paste( "data/mte_", sitename, ".Rdata", sep="" )
         avl_mte <- FALSE
 
         if (file.exists(filn)){

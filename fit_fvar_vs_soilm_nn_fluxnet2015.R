@@ -7,7 +7,7 @@ library( minpack.lm )
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')
 ##------------------------------------------------
-successcodes <- read.csv( paste( "/successcodes.csv", sep="" ), as.is = TRUE )
+successcodes <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
 
 ## Manual settings ----------------
@@ -22,7 +22,7 @@ overwrite_modis = FALSE
 overwrite_mte = FALSE
 ##---------------------------------
 
-siteinfo <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/siteinfo_fluxnet2015_sofun.csv", sep="") )
+siteinfo <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
 
 ##------------------------------------------------
 ## Load overview L1 and initialise additional columns created here
@@ -118,7 +118,7 @@ jdx <- 0
 for (sitename in do.sites){
   jdx <- jdx + 1
 
-  infil     <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  infil     <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"

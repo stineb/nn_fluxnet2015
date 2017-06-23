@@ -78,8 +78,8 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
     char_wgt <- ""
   }
 
-  panelfiln <- paste( "/fig_nn_fluxnet2015/panel_potentialgpp/panel_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="")   
-  infil     <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  panelfiln <- paste( "fig_nn_fluxnet2015/panel_potentialgpp/panel_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="")   
+  infil     <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ## this is necessary to avoid plotting into an already existing panel
   # if (!makepdf) dev.off()
@@ -108,7 +108,7 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   ##------------------------------------------------
   ## Get MTE-GPP for this site if available
   ##------------------------------------------------
-  filn <- paste( "/data/mte_", sitename, ".Rdata", sep="" )
+  filn <- paste( "data/mte_", sitename, ".Rdata", sep="" )
   if ( file.exists(filn) ){
     missing_mte <- FALSE
     load( filn )
@@ -119,7 +119,7 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   ##------------------------------------------------
   ## Get MODIS-GPP for this site if available
   ##------------------------------------------------
-  filn <- paste( "/data/modis_", sitename, ".Rdata", sep="" )
+  filn <- paste( "data/modis_", sitename, ".Rdata", sep="" )
   if ( file.exists(filn) ){
     load( filn )
     avl_modisgpp <- TRUE
@@ -130,7 +130,7 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   ##------------------------------------------------
   ## Get MODIS-FPAR for this site
   ##------------------------------------------------
-  filn <- paste( "/data/fapar_modis_", sitename, ".Rdata", sep="" )
+  filn <- paste( "data/fapar_modis_", sitename, ".Rdata", sep="" )
   modis_fpar <- try( read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/sitedata/fapar/", sitename, "/dfapar_fpar_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
   if (class(modis_fpar)!="try-error" &&  sum(!is.na(modis_fpar$data))>2 ){
     modis_fpar <- dplyr::rename( modis_fpar, fapar_modis=data )
@@ -196,8 +196,8 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
       # layout.show( panel )
 
       library(stats)
-      source( paste( myhome, "/add_alpha.R", sep="" ) )
-      source( paste( myhome, "/loess_range.R", sep="" ) )
+      source( "add_alpha.R" )
+      source( "loess_range.R" )
 
       cols <- c( "royalblue3", "tomato" )
 

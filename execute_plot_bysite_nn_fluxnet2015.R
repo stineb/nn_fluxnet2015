@@ -1,14 +1,11 @@
 rm( list=ls(all=TRUE) )
 
-syshome <- Sys.getenv( "HOME" )
-source( paste( syshome, "/.Rprofile", sep="" ) )
-
-source( paste( "/plot_bysite_nn_fluxnet2015.R", sep="" ) )
+source( paste( "plot_bysite_nn_fluxnet2015.R", sep="" ) )
 
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')
 ##------------------------------------------------
-successcodes <- read.csv( paste( "/successcodes.csv", sep="" ), as.is = TRUE )
+successcodes <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
 
 ## Manual settings ----------------

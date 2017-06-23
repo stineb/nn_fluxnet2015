@@ -11,7 +11,7 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
 
   require(dplyr)
   
-  source( "add_alpha.R")
+  source( "add_alpha.R" )
 
   ## check and override if necessary
   if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
@@ -43,14 +43,14 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   before <- 30
   after  <- 100
 
-  load( paste("data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
+  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
   
 
   ##------------------------------------------------
   ## Load data
   ##------------------------------------------------
   if (verbose) print("loading nn_fVAR file ...")
-  infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
   df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
   droughts <- nn_fluxnet[[ sitename ]]$droughts        
@@ -83,7 +83,7 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   ##------------------------------------------------
   if (verbose) print("plotting muiltipanel ...")
   lue <- TRUE
-  panelfiln <- paste( "/fig_nn_fluxnet2015/aligned/aligned_potentialgpp_", sitename, "_", nam_target, char_fapar, ".pdf", sep="")
+  panelfiln <- paste( "fig_nn_fluxnet2015/aligned/aligned_potentialgpp_", sitename, "_", nam_target, char_fapar, ".pdf", sep="")
 
   alpha <- 0.3/(nrow(droughts))
   xvals <- (-before:after)+1
@@ -236,26 +236,6 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
       abline( h=1.0, col='grey40', lwd=0.5 )
       # title( paste( sitename ) )
 
-      # ## boxplot for levels within bins
-      # bp1 <- boxplot( pri ~ inpribin, 
-      #                 data    = df_dday, 
-      #                 at      = bincentres_pri, 
-      #                 outline = FALSE, 
-      #                 na.rm   = TRUE, 
-      #                 add     = TRUE, 
-      #                 axes    = FALSE, 
-      #                 boxwex  = 5,
-      #                 border  = "grey50",
-      #                 lwd     = 0.5
-      #               )
-
-      # # GPP over drought aligned
-      # for ( idx in 1:nrow(droughts) ){
-      #   tmp <- data_alg_dry[,which( names(df)=="scci"),idx]
-      #   tmp <- approx( xvals, tmp, xout=xvals )$y
-      #   lines( xvals, tmp, col=add_alpha("goldenrod4", 0.4) )
-      # }
-
       rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
 
       ## plot polygon for cci
@@ -280,65 +260,6 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
       legend( "bottomleft", c("CCI"), bty="n", lty=1, lwd=2, col=c("cadetblue4"), cex=1.0, inset=c(0,0.15) )
 
     }
-
-
-    # ##--------------------------------------------------------
-    # ## IWUE
-    # ##--------------------------------------------------------
-    # if (verbose) print("plot 4/5")
-    # ndaysavg <- 10
-    # ref <- mean( data_alg_dry[ max( (before - ndaysavg), 0):before,which(names(df)=="iwue"),], na.rm=TRUE )
-    # xvals <- (-before:after)+1
-
-    # if (!is.nan(ref)){
-    #   upper <- apply( data_alg_dry[,which(names(df)=="iwue"),] / ref, 1, function(x) quantile(x,0.75, na.rm=TRUE)   )
-    #   upper <- approx( xvals, upper, xout=xvals )$y
-    #   lower <- apply( data_alg_dry[,which(names(df)=="iwue"),] / ref, 1, function(x) quantile(x,0.25, na.rm=TRUE)   )
-    #   lower <- approx( xvals, lower, xout=xvals )$y
-    #   mid   <- apply( data_alg_dry[,which(names(df)=="iwue"),] / ref, 1, function(x) quantile(x,0.5, na.rm=TRUE)   )
-    #   idxs  <- which( !is.na(upper) & !is.na(lower) )
-      
-    #   ylim <- range( upper, lower, na.rm=TRUE )
-    #   ylim[1] <- max( 0.0, ylim[1] )
-
-    #   par( las=1, mar=c(0,4,0,3), xpd=FALSE )
-    #   plot( (-before:after), (-before:after), type="n", xlab="day after drought", ylab=expression( paste( Delta, "IWUE*" ) ), ylim=ylim, axes=FALSE )
-    #   if (verbose) print("y")
-    #   axis( 2 )
-    #   axis( 4 )
-    #   # for ( idx in 1:nrow(droughts) ){
-    #   #   lines( xvals, data_alg_dry[,which(names(df)=="wue_obs"),idx] / ref, col=rgb(0,0,0,0.2) , lwd=1 ) #col=rgb(0,1,0,0.6)
-    #   # }
-    #   rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-
-    #   ## boxplot for levels within bins
-    #   bp1 <- boxplot( iwue / ref ~ iniwuebin, 
-    #                   data    = df_dday, 
-    #                   at      = bincentres_iwue, 
-    #                   outline = FALSE, 
-    #                   na.rm   = TRUE, 
-    #                   add     = TRUE, 
-    #                   axes    = FALSE, 
-    #                   boxwex  = 20,
-    #                   border  = "grey50",
-    #                   lwd     = 0.5
-    #                 )
-
-    #   ## plot polygon for WUE
-    #   polygon( c( xvals[idxs], rev(xvals[idxs])), c( lower[idxs], rev(upper[idxs])), col=add_alpha('blue', 0.3), border=NA )
-    #   lines( xvals, mid, col="blue", lwd=1 )
-
-    #   # ## attach to aligned data frame
-    #   # df_aligned_stat$iwue <- mid
-
-    # } else {
-    #   plot( xvals, xvals, type="n", xlab="day after drought", ylab=expression( paste( Delta, "IWUE*" ) ), ylim=c(0,1), axes=FALSE )
-    #   axis( 2 )
-    #   axis( 4 )
-    #   rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-    #   # df_aligned_stat$iwue <- rep(NA, nrow(df_aligned_stat))
-    # }
-
 
     ##--------------------------------------------------------
     ## PLOT ARRANGED BIAS

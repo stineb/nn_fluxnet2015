@@ -11,8 +11,8 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
 
   require(dplyr)
 
-  source( paste( myhome, "/analyse_modobs.R", sep="" ) )
-  source( paste( myhome, "/plot_panel_nn.R", sep="" ) )
+  source( "analyse_modobs.R" )
+  source( "plot_panel_nn.R" )
 
   nn_fluxnet <- list()
 
@@ -51,9 +51,9 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
 
   filn  <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
   if (testprofile){
-    dir <- "./data/"
+    dir <- "data/"
   } else {
-    dir <- paste( myhome, "data/nn_fluxnet/fvar/", sep="" )
+    dir <- paste( "data/nn_fluxnet/fvar/", sep="" )
   }
 
   avl <- TRUE
@@ -192,27 +192,6 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     ## * RMSE of NNgood vs. NNall during good days
     if ( stats$out_NNNN$rsq > 50  ) failed <- TRUE
 
-    # ## delete panel file
-    # dir <- paste( "/fig_nn_fluxnet2015/panel_potentialgpp/", sep="")
-    # filn <- paste( "panel_crude_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="" )
-    # path <- paste( dir, filn, sep="" )
-    # if (file.exists( path )) {
-    #   system( paste( "rm", path ) )
-    # } else {
-    #   path <- paste( dir, "failed/", filn, sep="" )
-    #   system( paste( "rm", path ) )
-    # }
-
-    # ## move NN fvar data file if it's re-classified now
-    # dir <- paste( myhome, "data/nn_fluxnet/fvar/", sep="")
-    # filn <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
-    # path <- paste( dir, filn, sep="" )
-    # if ( file.exists( path ) && failed ) {
-    #   system( paste( "mv", path, paste( dir, "failed/" ) ) )
-    # } else if ( !file.exists( path ) && !failed ){
-    #   system( paste( "mv", paste( dir, "failed/", filn, sep="" ), dir ) )
-    # }
-    
 
     ##------------------------------------------------
     ## Return code for success
@@ -251,7 +230,7 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
                       )
 
     ## create new panel file and put to failed folder if necessary
-    dir <- paste( "/fig_nn_fluxnet2015/panel_potentialgpp/", paste( "level_", as.character(successcode), sep="" ), sep="" )
+    dir <- paste( "fig_nn_fluxnet2015/panel_potentialgpp/", paste( "level_", as.character(successcode), sep="" ), sep="" )
     if (!file.exists( dir ) ) system( paste( "mkdir", dir ) )
     panelfiln <- paste( dir, "/panel_crude_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="")
     # system( paste( "rm ", "/fig_nn_fluxnet2015/panel_potentialgpp/level_*/*", sep="" ) )

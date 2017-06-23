@@ -453,60 +453,6 @@ profile_soilm_neuralnet <- function( sitename, nam_target="gpp_obs", use_weights
         }
         df_bad$goodbad <- rep("bad", nrow(df_bad))
 
-
-        # ##------------------------------------------------
-        # ## Determine best split based on ANOVA measure for difference between good and bad days projections of the good-day-trained NN
-        # ##------------------------------------------------
-        # anova_by_soilm <- data.frame( soilm_threshold=c(), F_anova=c() )
-        # for (isoilm_trh in soilm_thrsh_avl){
-          
-        #   df <- rbind( dplyr::filter( df_good, soilm_threshold==isoilm_trh ), dplyr::filter( df_bad, soilm_threshold==isoilm_trh ) )
-        #   df$goodbad <- as.factor( df$goodbad )
-
-        #   ## get linear model for factor=treatment
-        #   linmod <- lm( ratio ~ goodbad, data = df )
-
-        #   ## ANOVA
-        #   tmp_anovamod <- anova( linmod )
-
-        #   ## add row to statistics data frame
-        #   addrow <-  data.frame( soilm_threshold=isoilm_trh, F_anova=tmp_anovamod$`F value`[1] ) 
-        #   anova_by_soilm <- rbind( anova_by_soilm, addrow )
-
-        # }  
-        # best_soilm_trh <- anova_by_soilm$soilm_threshold[ which.max(anova_by_soilm$F_anova) ]
-
-        # ##------------------------------------------------
-        # ## Determine 3 best soil moisture cutoffs w.r.t. best split based on Kolmogorov-Smirnov statistics of good-model vs. all-model predicted values of bad days
-        # ##------------------------------------------------
-        # ks_by_soilm <- data.frame( soilm_threshold=c(), ks_stat=c() )
-        # for (isoilm_trh in soilm_thrsh_avl){
-          
-        #   tmp_ks <- ks.test( dplyr::filter( df_bad, soilm_threshold==isoilm_trh )$ratio, dplyr::filter( df_good, soilm_threshold==isoilm_trh )$ratio, alt='greater'  )
-
-        #   ## add row to statistics data frame
-        #   addrow <-  data.frame( soilm_threshold=isoilm_trh, ks_stat=tmp_ks$statistic ) #, p_val=tmp_ks$p.value
-
-        #   ## if mean of bad days is smaller than mean of good days, it obviously doesn't work. Override with dummy (negative ks_stat value)
-        #   if ( median( dplyr::filter( df_bad, soilm_threshold==isoilm_trh )$ratio ) < median( dplyr::filter( df_good, soilm_threshold==isoilm_trh )$ratio ) ){
-        #     addrow$ks_stat <- -9999
-        #   }
-
-        #   ks_by_soilm <- rbind( ks_by_soilm, addrow )
-
-        # }  
-          
-        # ks_by_soilm <- ks_by_soilm[ which(ks_by_soilm$ks_stat!=-9999), ]
-
-        # if (nrow(ks_by_soilm)>0){
-        #   list_best_soilm_trh <- ks_by_soilm$soilm_threshold[ order(-ks_by_soilm$ks_stat)][1:min(3,nrow(ks_by_soilm))]
-        # } else {
-        #   best_soilm_trh <- max( 0.2, min(soilm_thrsh_avl) )
-        # }
-
-        # profile_nn[[ sitename ]]$p_val      <- ks_by_soilm$p_val[ which(ks_by_soilm$soilm_threshold==best_soilm_trh) ]
-        # profile_nn[[ sitename ]]$ks_stat    <- ks_by_soilm$ks_stat[ which(ks_by_soilm$soilm_threshold==best_soilm_trh) ]
-
         ##------------------------------------------------
         ## Determine N best soil moisture cutoffs w.r.t. best split based on difference in median of good-model vs. all-model predicted values of bad days
         ## criterium: median( NN-good(bad) / obs ) - median( NN-good(good) / obs ) = max!
@@ -529,27 +475,6 @@ profile_soilm_neuralnet <- function( sitename, nam_target="gpp_obs", use_weights
         
         print("list_best_soilm_trh:")
         print( diff_good_bad[ order(-diff_good_bad$diff), ] )
-
-        # ##------------------------------------------------
-        # ## Determine best split based on R-squared of good days model
-        # ##------------------------------------------------
-        # ## re-organise statistics into new data frame
-        # df_stat_good <- data.frame()
-        # for (isoilm_trh in soilm_thrsh_avl){
-        #   if (!is.null(profile_nn[[ sitename ]][[ isoilm_data ]][[ ipackage ]][[ paste( "smtrh_", isoilm_trh, sep="" ) ]]$stats_nn_good)){
-        #     tmp <- data.frame( 
-        #       soilm_thrsh_avl =isoilm_trh,
-        #       rsq             =profile_nn[[ sitename ]][[ isoilm_data ]][[ ipackage ]][[ paste( "smtrh_", isoilm_trh, sep="" ) ]]$stats_nn_good$rsq,
-        #       nse             =profile_nn[[ sitename ]][[ isoilm_data ]][[ ipackage ]][[ paste( "smtrh_", isoilm_trh, sep="" ) ]]$stats_nn_good$nse,
-        #       rmse            =profile_nn[[ sitename ]][[ isoilm_data ]][[ ipackage ]][[ paste( "smtrh_", isoilm_trh, sep="" ) ]]$stats_nn_good$rmse
-        #      )
-        #     df_stat_good <- rbind( df_stat_good, tmp ) 
-        #   }
-        # }
-
-        # ## get soilm_thrsh_avl where best fit is achieved for good-days model (highest NSE)
-        # sub <- df_stat_good[ is.element( df_stat_good$soilm_thrsh_avl, list_best_soilm_trh ), ]
-        # best_soilm_trh <- sub$soilm_thrsh_avl[ order(-sub$rsq)][1]
 
         ##------------------------------------------------
         ## Determine best split based on variability of fVAR during good days
@@ -605,7 +530,7 @@ profile_soilm_neuralnet <- function( sitename, nam_target="gpp_obs", use_weights
         # maxy <- max( quantile( df_bad$ratio, probs=0.90 ), quantile( df_good$ratio, probs=0.90 ) )
         # maxy <- min( 10, max( max( df_bad$ratio ), max( df_good$ratio ) ) )
         maxy <- min( 10, max( quantile( df_bad$ratio, probs=0.90 ), quantile( df_good$ratio, probs=0.90 ) ) )
-        if (makepdf) pdf( paste( "fig_nn_fluxnet2015/ratio_vs_threshold/ratio_vs_threshold_", nam_target, char_fapar, "_", isoilm_data, "_", sitename, ".pdf", sep="" ), width=8, height=6 )      
+        if (makepdf) pdf( paste( myhome, "/fig_nn_fluxnet2015/ratio_vs_threshold/ratio_vs_threshold_", nam_target, char_fapar, "_", isoilm_data, "_", sitename, ".pdf", sep="" ), width=8, height=6 )      
           bp1 <- boxplot( 
             ratio ~ soilm_threshold, 
             data =df_good, 
