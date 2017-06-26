@@ -2,11 +2,11 @@
 title: "Extended Methods for paper *Quantifying soil moisture control on light use efficiency across biomes*"
 author: "Benjamin Stocker"
 date: "`r Sys.Date()`"
-# output:
-#   html_document:
-#     toc: true
-#     toc_float: true
-output: github_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+# output: github_document
 header-includes:
    - \usepackage{amsmath}
 ---
