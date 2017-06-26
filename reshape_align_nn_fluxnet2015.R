@@ -1,12 +1,13 @@
-reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, overwrite=TRUE, verbose=FALSE ){
+reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, overwrite=TRUE, verbose=FALSE, testprofile=FALSE ){
 
   # ## debug-------------------
-  # sitename = "IT-Cp2"
+  # sitename = "FR-Pue"
   # nam_target="lue_obs_evi"
   # use_fapar=FALSE
   # use_weights=FALSE
   # overwrite=TRUE
-  # verbose=FALSE
+  # verbose=TRUE
+  # testprofile=FALSE
   # #--------------------------
 
   require( dplyr )
@@ -60,7 +61,12 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
   ## load nn_fVAR data and "detatch"
   ##------------------------------------------------
   if (verbose) print("loading nn_fVAR file ...")
-  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
+  if (testprofile){
+    dir <- "./data/"
+  } else {
+    dir <- paste( myhome, "data/nn_fluxnet/fvar/", sep="" )
+  }
+  infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
   df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
 
@@ -201,12 +207,17 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
     ##--------------------------------------------------------
     ## re-arrange MODIS dataframe
     ##--------------------------------------------------------
-      filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
+      filn <- paste( "data/aligned_modis_", sitename, ".Rdata", sep="" )
       if (!file.exists(filn)||overwrite){
-        if (verbose) print("aligning MODIS ...")
         filn <- paste( "data/modis_", sitename, ".Rdata", sep="" )
-        error <- try( load( filn ) ) # loads 'nice_to_modis', file prepared in 'plot_nn_fVAR_fluxnet2015.R'
-        if (class(error)!="try-error"){
+        avl_modis <- FALSE
+
+        if (file.exists(filn)){
+
+          if (verbose) print("aligning MODIS ...")
+          avl_modis <- TRUE
+
+          load( filn ) # loads 'nice_to_modis', file prepared in 'plot_nn_fVAR_fluxnet2015.R'
           
           if ( !is.element( "ratio_obs_mod_modis", names(nice_to_modis) ) ) {
             nice_to_modis$ratio_obs_mod_modis  <-  nice_to_modis$gpp_obs / nice_to_modis$gpp_modis
@@ -277,14 +288,13 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
     ##--------------------------------------------------------
     ## re-arrange MTE dataframe
     ##--------------------------------------------------------
-      filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
+      filn <- paste( "data/aligned_mte_", sitename, ".Rdata", sep="" )
       if (!file.exists(filn)||overwrite){
-        if (verbose) print("aligning MTE ...")
         filn <- paste( "data/mte_", sitename, ".Rdata", sep="" )
         avl_mte <- FALSE
-
         if (file.exists(filn)){
 
+          if (verbose) print("aligning MTE ...")
           avl_mte <- TRUE
           load( filn )
 
@@ -310,35 +320,36 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
               ## remove data after drought onset that is no longer classified as drought
               dropidxs <- which( data_alg_dry_mte[,which(names_alg_mte=="is_drought_byvar"),iinst]==1 & data_alg_dry_mte[,which(names_alg_mte=="dday"),iinst]<0 )
               data_alg_dry_mte[ dropidxs,,iinst ] <- NA
-            }        
+            }   
+
+            ##--------------------------------------------------------
+            ## Bin aligned data and expand from 3D array to dataframe
+            ##--------------------------------------------------------
+            ## expand 'data_alg_dry_mte' to get a data frame that now has 'dday' in it
+            df_dday_mte <- data.frame()
+            for (iinst in seq(dim(data_alg_dry_mte)[3])){
+              add <- as.data.frame( data_alg_dry_mte[,,iinst] )
+              colnames(add) <- names_alg_mte
+              add$mysitename <- rep( sitename, dim( data_alg_dry_mte[,,iinst] )[1])
+              add$inst <- rep( iinst, dim( data_alg_dry_mte[,,iinst] )[1] )
+              df_dday_mte <- rbind( df_dday_mte, add )
+            }
+            df_dday_mte <- df_dday_mte[ !is.na(df_dday_mte$year_dec), ]
+
+            ## aggregate by 'dday'
+            df_dday_aggbydday_mte <- df_dday_mte %>%  group_by( dday ) %>% 
+              summarise(
+                        ## mte bias
+                        bias_mte_med=median( bias_mte, na.rm=TRUE ), bias_mte_upp=quantile( bias_mte, 0.75, na.rm=TRUE ), bias_mte_low=quantile( bias_mte, 0.25, na.rm=TRUE )
+                        ) %>%
+              mutate( mysitename=sitename )
+
+            ## Append to Rdata file that already has the aligned array. Function 'resave()' is in my .Rprofile
+            save( data_alg_dry_mte, df_dday_mte, df_dday_aggbydday_mte, names_alg_mte, before_mte, after_mte, file=paste( "data/aligned_mte_", sitename, ".Rdata", sep="" ) )
+
           } else {
-            avl_mte <- FALSE
+            df_dday_mte <- NA
           }
-
-          ##--------------------------------------------------------
-          ## Bin aligned data and expand from 3D array to dataframe
-          ##--------------------------------------------------------
-          ## expand 'data_alg_dry_mte' to get a data frame that now has 'dday' in it
-          df_dday_mte <- data.frame()
-          for (iinst in seq(dim(data_alg_dry_mte)[3])){
-            add <- as.data.frame( data_alg_dry_mte[,,iinst] )
-            colnames(add) <- names_alg_mte
-            add$mysitename <- rep( sitename, dim( data_alg_dry_mte[,,iinst] )[1])
-            add$inst <- rep( iinst, dim( data_alg_dry_mte[,,iinst] )[1] )
-            df_dday_mte <- rbind( df_dday_mte, add )
-          }
-          df_dday_mte <- df_dday_mte[ !is.na(df_dday_mte$year_dec), ]
-
-          ## aggregate by 'dday'
-          df_dday_aggbydday_mte <- df_dday_mte %>%  group_by( dday ) %>% 
-            summarise(
-                      ## mte bias
-                      bias_mte_med=median( bias_mte, na.rm=TRUE ), bias_mte_upp=quantile( bias_mte, 0.75, na.rm=TRUE ), bias_mte_low=quantile( bias_mte, 0.25, na.rm=TRUE )
-                      ) %>%
-            mutate( mysitename=sitename )
-
-          ## Append to Rdata file that already has the aligned array. Function 'resave()' is in my .Rprofile
-          save( data_alg_dry_mte, df_dday_mte, df_dday_aggbydday_mte, names_alg_mte, before_mte, after_mte, file=paste( "data/aligned_mte_", sitename, ".Rdata", sep="" ) )
 
         } else {
 

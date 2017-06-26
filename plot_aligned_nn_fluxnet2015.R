@@ -1,12 +1,13 @@
-plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE ){
+plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
 
   # ## Debug ----------------
-  # sitename   = "IT-Cp2"
+  # sitename   = "FR-Pue"
   # nam_target = "lue_obs_evi"
-  # use_weights= FALSE    
+  # use_weights= FALSE
   # use_fapar  = FALSE
   # makepdf    = FALSE
   # verbose    = TRUE
+  # testprofile= TRUE
   # ##--------------------------
 
   require(dplyr)
@@ -43,20 +44,30 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   before <- 30
   after  <- 100
 
-  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
-  
-
   ##------------------------------------------------
   ## Load data
   ##------------------------------------------------
   if (verbose) print("loading nn_fVAR file ...")
-  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
+  if (testprofile) dir <- "data/" else dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
+  infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
-  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
+  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) 
   droughts <- nn_fluxnet[[ sitename ]]$droughts        
 
+  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
+  
   load( paste( "data/aligned_", sitename, ".Rdata", sep="" ) ) # loads data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
   load( paste( "data/df_dday_aggbydday_", sitename, ".Rdata", sep="" ) ) # loads 'df_dday_aggbydday'
+  
+  if ( is.element( sitename, missing_pri ) )      avl_pri <- FALSE else avl_pri <- TRUE
+  if ( any(!is.na(df_dday_aggbydday$dscci_med)) ) avl_pri <- TRUE  else avl_pri <- FALSE
+
+  if ( is.element( "pri", names(df)) ){
+    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
+  } else {
+    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue )    
+    avl_pri <- FALSE
+  }
 
   filn <- paste( "data/aligned_modis_", sitename, ".Rdata", sep="" )
   if (file.exists(filn)) {
@@ -73,9 +84,6 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   } else {
     avl_mte <- FALSE
   }
-  
-  if ( is.element( sitename, missing_pri ) ) avl_pri <- FALSE else avl_pri <- TRUE
-  if (any(!is.na(df_dday_aggbydday$dscci_med))) avl_pri <- TRUE else avl_pri <- FALSE
 
 
   ##------------------------------------------------

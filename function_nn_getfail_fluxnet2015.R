@@ -49,11 +49,12 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     char_wgt <- ""
   }
 
+  ## Get NN fvar data
   filn  <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
   if (testprofile){
-    dir <- "data/"
+    dir <- paste( workingdir, "/data/", sep="" )
   } else {
-    dir <- paste( "data/nn_fluxnet/fvar/", sep="" )
+    dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
   }
 
   avl <- TRUE

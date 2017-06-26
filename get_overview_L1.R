@@ -1,5 +1,3 @@
-rm( list=ls(all=TRUE) )
-
 library( dplyr )
 
 ##------------------------------------------------
@@ -80,7 +78,7 @@ for (sitename in do.sites){
   jdx <- jdx + 1
   missing_mte <- FALSE
 
-  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( myhome, "/data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"
@@ -118,7 +116,7 @@ if ( length( dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysi
   ##------------------------------------------------
   ## Get data from 'successcodes' (see 'nn_getfail_fluxnet2015.R') and merge into overview dataframe
   ##------------------------------------------------
-  overview <- overview %>% left_join( dplyr::select( successcodes, mysitename, NNall_rsq, NNgood_rsq, successcode ) )
+  overview <- overview %>% left_join( dplyr::select( successcodes, mysitename, NNall_rsq, NNgood_rsq, successcode ), by="mysitename" )
 
   ##------------------------------------------------
   ## Save collected data

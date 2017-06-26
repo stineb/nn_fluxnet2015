@@ -36,7 +36,7 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
   ##------------------------------------------------
   ## load data
   ##------------------------------------------------
-  load( paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" )  ) ## gets list 'nn_fluxnet'
+  load( paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" )  ) ## gets list 'nn_fluxnet'
   df       <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, match( fapar_data, names(.) ), fvar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs, gpp_obs_gfd, iwue )
   droughts <- nn_fluxnet[[ sitename ]]$droughts        
 

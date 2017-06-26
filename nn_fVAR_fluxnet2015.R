@@ -15,20 +15,20 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
   require( dplyr )
   require( abind )
   
-  source( paste( myhome, "/analyse_modobs.R", sep="" ) )
-  source( paste( myhome, "/add_alpha.R", sep="" ) )
-  source( paste( myhome, "/get_consecutive.R", sep="" ) )
-  source( paste( myhome, "/predict_nn.R", sep="" ) )
-  source( paste( myhome, "/remove_outliers.R", sep="" ) )
-  source( paste( myhome, "/niceify.R", sep="" ) )
-  source( paste( myhome, "/get_evianomalies_fluxnet.R", sep="" ) )
-  source( paste( myhome, "/cutna_headtail.R", sep="" ) )
-  source( paste( myhome, "/prune_droughts.R", sep="" ) )
-  source( paste( myhome, "/get_iwue.R", sep="" ) )
-  source( paste( myhome, "/cleandata_nn.R", sep="" ) )
+  source( paste( workingdir, "/analyse_modobs.R", sep="" ) )
+  source( paste( workingdir, "/add_alpha.R", sep="" ) )
+  source( paste( workingdir, "/get_consecutive.R", sep="" ) )
+  source( paste( workingdir, "/predict_nn.R", sep="" ) )
+  source( paste( workingdir, "/remove_outliers.R", sep="" ) )
+  source( paste( workingdir, "/niceify.R", sep="" ) )
+  source( paste( workingdir, "/get_evianomalies_fluxnet.R", sep="" ) )
+  source( paste( workingdir, "/cutna_headtail.R", sep="" ) )
+  source( paste( workingdir, "/prune_droughts.R", sep="" ) )
+  source( paste( workingdir, "/get_iwue.R", sep="" ) )
+  source( paste( workingdir, "/cleandata_nn.R", sep="" ) )
 
   ## IMPORTANT: USE SOILMOISTURE FROM S13 FOR NN-TRAINING
-  load( paste( myhome, "/data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata", sep="" ) ) # "new data" with s13
+  load( paste( workingdir, "/data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata", sep="" ) ) # "new data" with s13
 
   nn_fluxnet <- list()
 
@@ -67,7 +67,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
   ## Get NN-soilm-profile data
   if (testprofile){
-    filn <- paste( myhome, "/data/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
+    filn <- paste( workingdir, "/data/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
   } else {
     filn <- paste( myhome, "/data/nn_fluxnet/profile/profile_", nam_target, char_wgt, char_fapar, "_nn_", sitename, ".Rdata", sep="" )
   }
@@ -81,7 +81,6 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
     print("done.")
   }
 
-  print( paste( "loading profile file", filn ) )
   out <- try( load( filn ) )
   if ( class(out)!="try-error" ){
 
@@ -588,7 +587,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
       if (length(positive)>0){
 
-        if (makepdf) pdf( paste( myhome, "/fig_nn_fluxnet2015/hist/hist_fgpp_", package, "_", sitename, "_", as.character(isoilm_trh), ".pdf", sep="" ), width=8, height=6 )
+        if (makepdf) pdf( paste( workingdir, "/fig_nn_fluxnet2015/hist/hist_fgpp_", package, "_", sitename, "_", as.character(isoilm_trh), ".pdf", sep="" ), width=8, height=6 )
           par( xaxs="i", las=1 )
           hist( even,      
                 breaks=c(min(even),seq(0, 1.5, 0.01),max(even)),           
@@ -746,7 +745,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                                     do.plot=TRUE, 
                                     plot.title=paste( "NN all", sitename ), 
                                     nrcol=1, 
-                                    plot.fil=paste( myhome, "/fig_nn_fluxnet2015/modobs_alldays/modobs_alldays", sitename, ".pdf", sep="") 
+                                    plot.fil=paste( workingdir, "/fig_nn_fluxnet2015/modobs_alldays/modobs_alldays", sitename, ".pdf", sep="") 
                                     )
         # if ( out_NNall$prmse > 60 || out_NNall$rsq < 0.3 ) failed <- TRUE
 
@@ -754,7 +753,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
         mod <- nondrgtdays$var_nn_pot * nondrgtdays$ppfd * nondrgtdays$evi
         obs <- nondrgtdays[[ nam_target ]] * nondrgtdays$ppfd * nondrgtdays$evi
         if (makepdf){
-          plot.fil <- paste( myhome, "/fig_nn_fluxnet2015/modobs_gooddays/modobs_gooddays", sitename, ".pdf", sep="") 
+          plot.fil <- paste( workingdir, "/fig_nn_fluxnet2015/modobs_gooddays/modobs_gooddays", sitename, ".pdf", sep="") 
         } else {
           plot.fil <- NA
         }
@@ -773,7 +772,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
           mod <- droughtdays$var_nn_act * droughtdays$ppfd * droughtdays$evi
           obs <- droughtdays[[ nam_target ]] * droughtdays$ppfd * droughtdays$evi
           if (makepdf){
-            plot.fil <- paste( myhome, "/fig_nn_fluxnet2015/modobs_alldays/modobs_alldays_bad", sitename, ".pdf", sep="") 
+            plot.fil <- paste( workingdir, "/fig_nn_fluxnet2015/modobs_alldays/modobs_alldays_bad", sitename, ".pdf", sep="") 
           } else {
             plot.fil <- NA
           }
@@ -792,7 +791,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
         ## * RMSE of NNgood vs. NNall during good days
         if (makepdf){
-          plot.fil <- paste( myhome, "/fig_nn_fluxnet2015/pot_vs_act_NN/pot_vs_act_NN", sitename, ".pdf", sep="") 
+          plot.fil <- paste( workingdir, "/fig_nn_fluxnet2015/pot_vs_act_NN/pot_vs_act_NN", sitename, ".pdf", sep="") 
         } else {
           plot.fil <- NA
         }
@@ -835,7 +834,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
       }
 
       if (testprofile){
-        outfil <- paste( myhome, "/data/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+        outfil <- paste( workingdir, "/data/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
       } else {
         outfil <- paste( myhome, "/data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
       }

@@ -1,6 +1,6 @@
 source( "function_nn_getfail_fluxnet2015.R" )
 
-siteinfo <- read.csv( "/soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
+siteinfo <- read.csv( "./soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
 nam_target  = "lue_obs_evi"
 use_weights = FALSE
 use_fapar   = FALSE

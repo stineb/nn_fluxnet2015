@@ -1,5 +1,3 @@
-rm( list=ls(all=TRUE) )
-
 source( paste( "plot_bysite_nn_fluxnet2015.R", sep="" ) )
 
 ##------------------------------------------------

@@ -289,14 +289,19 @@ dev.off()
   library(rgeos)
   library(raster)
 
-  greve <- raster( paste( myhome, "data/greve/arid_trans_hum_world.nc", sep="" ) )
+  filn <- paste( workingdir, "data/greve/arid_trans_hum_world.nc", sep="" )
+  if (file.exists(filn)) greve <- raster( filn )
 
   pdf( "fig_nn_fluxnet2015/cluster_map.pdf", width=8, height=6 )
     
     par(las=1)
-    plot( greve , col=c( add_alpha("royalblue3", 0.7),  add_alpha("wheat3", 0.7),  add_alpha("tomato", 0.7)), ext=extent(c(-180,180,-65,85)), ylim=c(-65,85) )
-    
-    map( interior=FALSE, resolution=0, lwd=0.5, add=TRUE  ) # 
+
+    if (file.exists(filn)){
+      plot( greve , col=c( add_alpha("royalblue3", 0.7),  add_alpha("wheat3", 0.7),  add_alpha("tomato", 0.7)), ext=extent(c(-180,180,-65,85)), ylim=c(-65,85) )
+      map( interior=FALSE, resolution=0, lwd=0.5, add=TRUE  )
+    } else {
+      map( interior=FALSE, resolution=0, lwd=0.5 )
+    }    
 
     ## cluster 4: no low soil moisture data
     with( dplyr::filter( overview, alignedcluster==4 ), points( lon, lat, col='black', bg='black', pch=4, cex=0.4 ) )

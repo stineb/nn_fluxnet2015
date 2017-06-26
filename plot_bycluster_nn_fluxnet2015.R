@@ -13,13 +13,11 @@ lmp <- function (modelobject) {
 }
 
 ## Load variables from cluster_aligned_fluxnet2015.R: df_dday_agg, siteinfo_sub, mega, nclust, before, after
-load( "data/data_by_cluster_aligned.Rdata" )
+# load( "data/data_by_cluster_aligned.Rdata" )
 # load( "data/data_by_cluster_fvar_vs_soilm.Rdata" )
 
 ## Load aggregated data from all sites, created by plot_nn_fVAR_fluxnet2015.R: 
 load( "data/nice_agg_lue_obs_evi.Rdata" )       # loads 'nice_agg'
-load( "data/nice_modis_agg_lue_obs_evi.Rdata" ) # loads 'nice_to_modis_agg'
-load( "data/nice_mte_agg_lue_obs_evi.Rdata" )   # loads 'nice_to_mte_agg'
 
 load( "data/overview_data_fluxnet2015_L5.Rdata" )  # loads 'overview', written by cluster_fvar_vs_soilm.R or cluster_aligned_fluxnet2015.R
 
@@ -35,6 +33,9 @@ df_dday_agg       <- df_dday_agg       %>% left_join( dplyr::select( overview, m
 # df_dday_mte_agg   <- df_dday_mte_agg   %>% left_join( dplyr::select( overview, mysitename, alignedcluster, quadfitcluster, finalcluster  ) )
 
 verbose <- FALSE
+
+before <- -30
+after <- 100
 
 ##------------------------------------------------
 ## fLUE vs. soilmoisture

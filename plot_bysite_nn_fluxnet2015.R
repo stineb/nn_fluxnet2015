@@ -7,7 +7,7 @@ lmp <- function(modelobject) {
 }
 
 smooth_runminmax <- function( x, y ){  
-  source( paste( "/cutna_headtail.R", sep="" ) )
+  source( "cutna_headtail.R" )
   idxs_drop <- cutna_headtail( y )
   if (length(idxs_drop)>0) { x <- x[-idxs_drop] }
   if (length(idxs_drop)>0) { y <- y[-idxs_drop] }
@@ -33,7 +33,7 @@ spline_with_gaps <- function( xvals, yvals, nice ){
 }
 
 
-plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE ){
+plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
 
   require( dplyr )
   require( tidyr )
@@ -79,7 +79,14 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   }
 
   panelfiln <- paste( "fig_nn_fluxnet2015/panel_potentialgpp/panel_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="")   
-  infil     <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+
+  if (testprofile){
+    dir <- paste( workingdir, "/data/", sep="" )
+  } else {
+    dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
+  }
+
+  infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ## this is necessary to avoid plotting into an already existing panel
   # if (!makepdf) dev.off()
@@ -130,8 +137,8 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   ##------------------------------------------------
   ## Get MODIS-FPAR for this site
   ##------------------------------------------------
-  filn <- paste( "data/fapar_modis_", sitename, ".Rdata", sep="" )
-  modis_fpar <- try( read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/sitedata/fapar/", sitename, "/dfapar_fpar_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
+  filn <- paste( myhome, "/data/fapar_modis_", sitename, ".Rdata", sep="" )
+  modis_fpar <- try( read.csv( paste( myhome, "/sofun/input_fluxnet2015_sofun/sitedata/fapar/", sitename, "/dfapar_fpar_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
   if (class(modis_fpar)!="try-error" &&  sum(!is.na(modis_fpar$data))>2 ){
     modis_fpar <- dplyr::rename( modis_fpar, fapar_modis=data )
     modis_fpar$fapar_modis <- approx( modis_fpar$year_dec, modis_fpar$fapar_modis * 1e-1, xout=modis_fpar$year_dec )$y

@@ -26,7 +26,7 @@ clean_fluxnet_gpp <- function( gpp_nt, gpp_dt, qflag_reichstein, qflag_lasslop, 
 }
 
 clean_fluxnet_et <- function( et, qflag_et, cutoff=0.2 ){
-  source( paste( myhome, '/identify_pattern.R', sep="" ) )
+  source( paste( workingdir, '/identify_pattern.R', sep="" ) )
 
   ## Remove data points that are based on too much gap-filled data in the underlying half-hourly data
   # frac_data_thresh <- 0.2  ## fraction of data based on gap-filled half-hourly

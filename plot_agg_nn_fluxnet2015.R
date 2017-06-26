@@ -1,9 +1,7 @@
-rm(list=ls(all=TRUE))
-
 library(dplyr)
 
-source( paste( myhome, "/analyse_modobs.R", sep="" ) )
-source( paste( myhome, "/remove_outliers.R", sep="" ) )
+source( paste( workingdir, "/analyse_modobs.R", sep="" ) )
+source( paste( workingdir, "/remove_outliers.R", sep="" ) )
 
 ## Manual settings ----------------
 nam_target = "lue_obs_evi"
@@ -54,8 +52,22 @@ siteinfo <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/siteinfo_flu
 
 ## Load aggregated data from all sites, created by plot_nn_fVAR_fluxnet2015.R: 
 load( paste( "data/nice_agg_", char_wgt, nam_target, ".Rdata", sep="" ) )       # loads 'nice_agg'
-load( paste( "data/nice_modis_agg_", char_wgt, nam_target, ".Rdata", sep="" ) ) # loads 'nice_to_modis_agg'
-load( paste( "data/nice_mte_agg_", char_wgt, nam_target, ".Rdata", sep="" ) )   # loads 'nice_to_mte_agg'
+
+filn <- paste( "data/nice_modis_agg_", char_wgt, nam_target, ".Rdata", sep="" )
+if (file.exists(filn)){
+  avl_modis <- TRUE
+  load( filn ) # loads 'nice_to_modis_agg'
+} else {
+  avl_modis <- FALSE
+}
+
+filn <- paste( "data/nice_mte_agg_", char_wgt, nam_target, ".Rdata", sep="" )
+if (file.exists(filn)){
+  avl_mte <- TRUE
+  load( filn ) # loads 'nice_to_mte_agg'
+} else {
+  avl_mte <- FALSE
+}
 
 ## Load aligned aggregated data
 load( "data/data_aligned_agg.Rdata" ) # loads 'df_dday_agg', 'df_dday_modis_agg', 'df_dday_mte_agg', 
@@ -166,8 +178,9 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
 ## GPPobs/GPPmod vs. fLUE
 ##------------------------------------------------
   df_dday_agg$ratio_obs_mod             <- remove_outliers( df_dday_agg$ratio_obs_mod, coef=5 )
-  df_dday_modis_agg$ratio_obs_mod_modis <- remove_outliers( df_dday_modis_agg$ratio_obs_mod_modis, coef=5 )
-  df_dday_mte_agg$ratio_obs_mod_mte     <- remove_outliers( df_dday_mte_agg$ratio_obs_mod_mte, coef=5 )
+
+  if (avl_modis) df_dday_modis_agg$ratio_obs_mod_modis <- remove_outliers( df_dday_modis_agg$ratio_obs_mod_modis, coef=5 )
+  if (avl_mte)   df_dday_mte_agg$ratio_obs_mod_mte     <- remove_outliers( df_dday_mte_agg$ratio_obs_mod_mte, coef=5 )
 
   magn <- 3
   ncols <- 4
@@ -229,7 +242,7 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
     # Distribution 
     par( las=1, mar=c(5,0,3,5), xpd=FALSE )
 
-    boxplot( filter( nice_agg, !is_drought_byvar )$ratio_obs_mod, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50', xlim=c(0,5), at=0.5 )
+    boxplot( dplyr::filter( nice_agg, !is_drought_byvar )$ratio_obs_mod, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50', xlim=c(0,5), at=0.5 )
     lines( c(-2,1), c(1,1), lwd=0.5, lty=2 )
     # abline( h=1.0, lwd=0.5, lty=2 )
 
@@ -237,81 +250,85 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
     #---------------------------------------------------------
     # MODIS
     #---------------------------------------------------------
-    par( las=1, mar=c(4,4.5,2.5,0) )
-    xlim <- c(0,1.2)
-    ylim <- c(0,4)
-    with( 
-          dplyr::filter( df_dday_modis_agg, ratio_obs_mod_modis<5 ),  # necessary to get useful bins with heatscatter()
-          heatscatter( 
-                      fvar, 
-                      ratio_obs_mod_modis, 
-                      xlab="fLUE",
-                      ylab="GPP observed / GPP modelled",
-                      xlim=xlim,
-                      ylim=ylim,
-                      cexplot=1.2,
-                      main=""
-                    ) 
-        )
+    if (avl_modis){
+      par( las=1, mar=c(4,4.5,2.5,0) )
+      xlim <- c(0,1.2)
+      ylim <- c(0,4)
+      with( 
+            dplyr::filter( df_dday_modis_agg, ratio_obs_mod_modis<5 ),  # necessary to get useful bins with heatscatter()
+            heatscatter( 
+                        fvar, 
+                        ratio_obs_mod_modis, 
+                        xlab="fLUE",
+                        ylab="GPP observed / GPP modelled",
+                        xlim=xlim,
+                        ylim=ylim,
+                        cexplot=1.2,
+                        main=""
+                      ) 
+          )
 
-    abline( h=1.0, lwd=0.5, lty=2 )
-    abline( v=1.0, lwd=0.5, lty=2 )
-    lines( c(-99,99), c(-99,99), col='red' )
-    mtext( "MODIS", line=1, adj=0.5 )
+      abline( h=1.0, lwd=0.5, lty=2 )
+      abline( v=1.0, lwd=0.5, lty=2 )
+      lines( c(-99,99), c(-99,99), col='red' )
+      mtext( "MODIS", line=1, adj=0.5 )
 
-    ## use only data during droughts for stats
-    sub <- dplyr::filter( df_dday_modis_agg, is_drought_byvar==1 ) 
-    stats <- analyse_modobs( sub$ratio_obs_mod_modis, sub$fvar, do.plot=FALSE )
+      ## use only data during droughts for stats
+      sub <- dplyr::filter( df_dday_modis_agg, is_drought_byvar==1 ) 
+      stats <- analyse_modobs( sub$ratio_obs_mod_modis, sub$fvar, do.plot=FALSE )
 
-    ## write stats into plot
-    x0 <- 0.05*xlim[2]
-    y0 <- 0.8*(ylim[2]-ylim[1])+ylim[1]      
-    # text( x0, y0, paste( "RMSE =", format( stats$rmse, digits = 2 ), " (", format( stats$prmse, digits = 2 ), "%)", sep="" ), adj=0.0, cex=0.8 )
-    # text( x0, y0+0.15, bquote( italic(R)^2 == .(format( stats$rsq, digits = 2) ) ),  adj=0.0, cex=0.8 )
-    text( x0, y0+0.3, paste( "N =", format( stats$N, digits = 1 ) ), adj=0.0, cex=0.8 )
+      ## write stats into plot
+      x0 <- 0.05*xlim[2]
+      y0 <- 0.8*(ylim[2]-ylim[1])+ylim[1]      
+      # text( x0, y0, paste( "RMSE =", format( stats$rmse, digits = 2 ), " (", format( stats$prmse, digits = 2 ), "%)", sep="" ), adj=0.0, cex=0.8 )
+      # text( x0, y0+0.15, bquote( italic(R)^2 == .(format( stats$rsq, digits = 2) ) ),  adj=0.0, cex=0.8 )
+      text( x0, y0+0.3, paste( "N =", format( stats$N, digits = 1 ) ), adj=0.0, cex=0.8 )
 
-    #---------------------------------------------------------
-    # Distribution 
-    #---------------------------------------------------------
-    par( las=1, mar=c(4,0,2.5,2), xpd=FALSE )
+      #---------------------------------------------------------
+      # Distribution 
+      #---------------------------------------------------------
+      par( las=1, mar=c(4,0,2.5,2), xpd=FALSE )
 
-    boxplot( 1.0 / filter( nice_to_modis_agg, !is_drought_byvar )$bias_modis, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50' )
-    abline( h=1.0, lwd=0.5, lty=2 )
+      boxplot( 1.0 / dplyr::filter( nice_to_modis_agg, !is_drought_byvar )$bias_modis, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50' )
+      abline( h=1.0, lwd=0.5, lty=2 )
+    }
 
 
     #---------------------------------------------------------
     # MTE
     #---------------------------------------------------------
-    par( las=1, mar=c(4,4.5,2.5,0) )
-    with( 
-          dplyr::filter( df_dday_mte_agg, ratio_obs_mod_mte<5 ),  # necessary to get useful bins with heatscatter()
-          plot( 
-                fvar, 
-                ratio_obs_mod_mte, 
-                xlab="fLUE",
-                ylab="GPP observed / GPP modelled",
-                xlim=c(0,1.2),
-                ylim=ylim,
-                cex=1.2,
-                pch=16,
-                col=add_alpha("black", 0.3),
-                main=""
-              ) 
+    if (avl_mte){
+      par( las=1, mar=c(4,4.5,2.5,0) )
+      with( 
+            dplyr::filter( df_dday_mte_agg, ratio_obs_mod_mte<5 ),  # necessary to get useful bins with heatscatter()
+            plot( 
+                  fvar, 
+                  ratio_obs_mod_mte, 
+                  xlab="fLUE",
+                  ylab="GPP observed / GPP modelled",
+                  xlim=c(0,1.2),
+                  ylim=ylim,
+                  cex=1.2,
+                  pch=16,
+                  col=add_alpha("black", 0.3),
+                  main=""
+                ) 
 
-        )
-    abline( h=1.0, lwd=0.5, lty=2 )
-    abline( v=1.0, lwd=0.5, lty=2 )
-    lines( c(-99,99), c(-99,99), col='red' )
-    mtext( "FLUXCOM MTE", line=1, adj=0.5 )
+          )
+      abline( h=1.0, lwd=0.5, lty=2 )
+      abline( v=1.0, lwd=0.5, lty=2 )
+      lines( c(-99,99), c(-99,99), col='red' )
+      mtext( "FLUXCOM MTE", line=1, adj=0.5 )
 
 
-    #---------------------------------------------------------
-    # Distribution 
-    #---------------------------------------------------------
-    par( las=1, mar=c(4,0,2.5,2), xpd=FALSE )
+      #---------------------------------------------------------
+      # Distribution 
+      #---------------------------------------------------------
+      par( las=1, mar=c(4,0,2.5,2), xpd=FALSE )
 
-    boxplot( 1.0 / filter( nice_to_mte_agg, !is_drought_byvar )$bias_mte, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50' )
-    abline( h=1.0, lwd=0.5, lty=2 )
+      boxplot( 1.0 / dplyr::filter( nice_to_mte_agg, !is_drought_byvar )$bias_mte, outline=FALSE, ylim=ylim, axes=FALSE, col='grey50' )
+      abline( h=1.0, lwd=0.5, lty=2 )
+    }
 
   dev.off()
 
@@ -508,7 +525,7 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
           xlim <- c(0,1.2)
           ylim <- c(0,1.5)
           with( 
-                filter( df_dday_agg, mysitename==sitename ),
+                dplyr::filter( df_dday_agg, mysitename==sitename ),
                 plot( 
                       fvar, 
                       dscci, 
@@ -523,7 +540,7 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
                     )
               )
           with( 
-                filter( df_dday_aggbydday_agg, mysitename==sitename ),
+                dplyr::filter( df_dday_aggbydday_agg, mysitename==sitename ),
                 points( 
                         fvar_med, 
                         dscci_med,
@@ -534,7 +551,7 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
               )
 
           with( 
-                filter( df_dday_agg, mysitename==sitename ),
+                dplyr::filter( df_dday_agg, mysitename==sitename ),
                 points( 
                         fvar, 
                         dspri, 
@@ -545,7 +562,7 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
                       )
               )
           with( 
-                filter( df_dday_aggbydday_agg, mysitename==sitename ),
+                dplyr::filter( df_dday_aggbydday_agg, mysitename==sitename ),
                 points( 
                         fvar_med, 
                         dspri_med,
@@ -561,11 +578,11 @@ nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid
 
           ## linear fit
           ## CCI
-          linmod <- lm( dscci ~ fvar, data=filter( df_dday_agg,  mysitename==sitename ) )
+          linmod <- lm( dscci ~ fvar, data=dplyr::filter( df_dday_agg,  mysitename==sitename ) )
           abline( linmod, col="goldenrod4", lty=1 )
 
           ## PRI
-          linmod <- lm( dspri ~ fvar, data=filter( df_dday_agg,  mysitename==sitename ) )
+          linmod <- lm( dspri ~ fvar, data=dplyr::filter( df_dday_agg,  mysitename==sitename ) )
           abline( linmod, col="cadetblue4", lty=1 )
 
           ## use only data during droughts for stats

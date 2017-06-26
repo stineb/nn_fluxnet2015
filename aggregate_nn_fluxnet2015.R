@@ -1,5 +1,3 @@
-rm( list=ls(all=TRUE) )
-
 library( dplyr )
 library( cgwtools )
 
@@ -12,7 +10,7 @@ successcodes <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
 
 ## Manual settings ----------------
-# do.sites   = "RU-Fyo"
+do.sites   = "FR-Pue"
 nam_target = "lue_obs_evi"
 use_weights= FALSE    
 use_fapar  = FALSE
@@ -33,29 +31,35 @@ load( "data/overview_data_fluxnet2015_L2.Rdata" )
 ##------------------------------------------------
 ## Get MTE-GPP for all sites
 ##------------------------------------------------
-filn <- paste( "data/gpp_mte_rf_fluxnet_tramontana/GPP_8Days_4Beni.csv", sep="" )
+filn <- paste( myhome, "data/gpp_mte_rf_fluxnet_tramontana/GPP_8Days_4Beni.csv", sep="" )
 if ( file.exists( filn ) ){
-  mte_dl <- read.csv( "data/gpp_mte_rf_fluxnet_tramontana/GPP_Daily_4Beni.csv", as.is=TRUE )
+  mte_dl <- read.csv( paste( myhome, "/data/gpp_mte_rf_fluxnet_tramontana/GPP_Daily_4Beni.csv", sep = "" ), as.is=TRUE )
   mte_8d <- read.csv( filn, as.is=TRUE )
   avl_data_mte <- TRUE
 } else {
   avl_data_mte <- FALSE
 }
 
+## XXX override
+avl_data_mte <- FALSE
+
 ##------------------------------------------------
 ## Check availability of MODIS GPP data
 ##------------------------------------------------
-fillist <- list.files( "data/modis_gpp_fluxnet_cutouts_tseries/" )
+fillist <- list.files( myhome, "data/modis_gpp_fluxnet_cutouts_tseries/" )
 if (length(fillist)==0) {
   avl_data_modis <- FALSE
 } else {
   avl_data_modis <- TRUE
 }
 
+## XXX override
+avl_data_modis <- FALSE
+
 ##------------------------------------------------
 ## Get PRI and CCI for all sites
 ##------------------------------------------------
-filn <- paste( "data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata" )
+filn <- paste( myhome, "data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata" )
 
 if ( file.exists(filn) ){
 
@@ -153,7 +157,7 @@ for (sitename in do.sites){
   jdx <- jdx + 1
   missing_mte <- FALSE
 
-  infil <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"
@@ -435,7 +439,7 @@ for (sitename in do.sites){
     } else {
 
       ## prepare 'nice_to_modis'
-      modis <- try( read.csv( paste( "data/modis_gpp_fluxnet_cutouts_tseries/", sitename, "/gpp_8d_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
+      modis <- try( read.csv( paste( myhome, "data/modis_gpp_fluxnet_cutouts_tseries/", sitename, "/gpp_8d_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
       if (class(modis)!="try-error"){
         avl_modisgpp <- TRUE
         modis <- dplyr::rename( modis, gpp_modis=data )
@@ -498,7 +502,7 @@ if ( length( dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysi
   ##------------------------------------------------
   ## save collected data
   ##------------------------------------------------
-  save( nice_agg, file=paste("data/nice_agg_", nam_target, char_fapar, ".Rdata", sep="") )
+  save( nice_agg, file=paste( "data/nice_agg_", nam_target, char_fapar, ".Rdata", sep="") )
 
   if (avl_data_mte)   save( nice_to_mte_agg,   file=paste("data/nice_mte_agg_",   nam_target, char_fapar, ".Rdata", sep="") )
   if (avl_data_modis) save( nice_to_modis_agg, file=paste("data/nice_modis_agg_", nam_target, char_fapar, ".Rdata", sep="") )
