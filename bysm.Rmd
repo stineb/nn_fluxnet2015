@@ -1,0 +1,30 @@
+---
+title: "Additional tests"
+author: "Benjamin Stocker"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+fig_height: 8
+---
+
+## Aligning by soil moisture
+Drought events are alternatively defined not by an fLUE threshold but by a soil moisture threshold. Thereby, more sites' data, including those without fLUE droughts, can be used. This is done to check whether EVI changes (strongly) during (soil moisture-) droughts and whether this is the reason that fLUE is not responsive to soil moisture, i.e. whether the EVI response fully captures GPP response to drought and thus implies an insensitivity of fLUE to soil moisture.
+```{r}
+
+workingdir <- getwd()
+print( paste("working directory directory:", workingdir ) )
+myhome <- "/alphadata01/bstocker/"
+
+source("reshape_align_nn_fluxnet2015.R")
+source("plot_aligned_nn_fluxnet2015.R")
+
+load("data/overview_data_fluxnet2015_L6.Rdata")
+do.sites <- dplyr::filter(overview, finalcluster==3)$mysitename
+
+for (sitename in do.sites){
+  out <- reshape_align_nn_fluxnet2015( sitename, testprofile=FALSE, bysm = TRUE )
+  plot_aligned_nn_fluxnet2015( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE, testprofile=FALSE, bysm=TRUE )
+}
+```

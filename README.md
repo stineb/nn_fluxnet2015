@@ -7,7 +7,7 @@ A detailed description of the scope, method, and algorithms is given by the RMar
 To get this repository, change into a suitable directory and clone by
 ```bash
 cd <suitable-working-direcotry>
-git clone https://github.com/stineb/nn_fluxnet2015.git" .
+git clone https://github.com/stineb/nn_fluxnet2015.git .
 ```
 
 To render the RMarkdown file, execute all code, and thereby fully reproduce all analysis, simply enter the following command in RStudio (after making sure the 'rmarkdown' package is installed):

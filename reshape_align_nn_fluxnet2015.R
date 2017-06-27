@@ -1,8 +1,9 @@
-reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, overwrite=TRUE, verbose=FALSE, testprofile=FALSE ){
+reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bysm=FALSE, use_fapar=FALSE, use_weights=FALSE, overwrite=TRUE, verbose=FALSE, testprofile=FALSE ){
 
   # ## debug-------------------
   # sitename = "FR-Pue"
   # nam_target="lue_obs_evi"
+  # bysm=FALSE
   # use_fapar=FALSE
   # use_weights=FALSE
   # overwrite=TRUE
@@ -11,6 +12,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
   # #--------------------------
 
   require( dplyr )
+  require( cgwtools )
 
   source( "get_consecutive.R" )	
 
@@ -41,6 +43,12 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
 	  char_fapar <- ""
 	}
 
+  if (bysm){
+    char_bysm <- "_bysm"
+  } else {
+    char_bysm <- ""
+  }
+
 	before <- 30
 	after  <- 100
 
@@ -68,9 +76,31 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
   }
   infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
-  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
+  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )
 
-  droughts <- nn_fluxnet[[ sitename ]]$droughts        
+  if (is.element("pri", names(df))){
+    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
+    avl_pri <- TRUE
+  } else {
+    avl_pri <- FALSE
+    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue )
+  }
+
+  ## Get drought events. Default defined by fLUE, alternative (bysm=TRUE) defined by soil moisture threshold 0.5 (see 'nn_fVAR_fluxnet2015.R')
+  if (bysm){
+    ## Get soil moisture droughts
+    print("get drought events ...")
+    df$is_drought_bysoilm <- ( df$soilm_mean < 0.5 )
+    droughts <- get_consecutive( 
+                                df$is_drought_bysoilm, 
+                                leng_threshold = 3, 
+                                do_merge       = FALSE
+                                )
+  } else {
+    droughts <- nn_fluxnet[[ sitename ]]$droughts
+  }
+
+  print(infil)
 
   df$bias_pmodel  <-  df$gpp_pmodel / df$gpp_obs
   df$bias_pmodel[ which(is.infinite(df$bias_pmodel)) ] <- NA
@@ -84,7 +114,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
     ##--------------------------------------------------------
     ## re-arrange data, aligning by beginning of drought
     ##--------------------------------------------------------
-      filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
+      filn <- paste( "data/aligned_", sitename, char_bysm, ".Rdata", sep="" )
       if (!file.exists(filn)||overwrite){
         if (verbose) print("aligning df ...")
         # after  <- min( max(droughts$len), 200 )
@@ -134,7 +164,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
       df_dday <- df_dday %>% mutate( iniwuebin  = cut( as.numeric(dday), breaks = iwuebins ) )
 
       ## normalise PRI and CCI to mean by fvar-sized-bin number 2 (zerobin)
-      if ( is.element( sitename, missing_pri ) ) { avl_pri <- FALSE } else { avl_pri <- TRUE }
+      if ( is.element( sitename, missing_pri ) ) avl_pri <- FALSE
 
       if ( avl_pri ){
 
@@ -197,11 +227,11 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", us
 
       ## drop rows dday=NA
       df_dday_aggbydday <- df_dday_aggbydday[ which( !is.na(df_dday_aggbydday$dday)), ]
-      save( df_dday_aggbydday, file=paste( "data/df_dday_aggbydday_", sitename, ".Rdata", sep="" ) )
+      save( df_dday_aggbydday, file=paste( "data/df_dday_aggbydday_", sitename, char_bysm, ".Rdata", sep="" ) )
       
 
       ## Append to Rdata file that already has the aligned array. Function 'resave()' is in my .Rprofile
-      resave( df_dday, file=paste( "data/aligned_", sitename, ".Rdata", sep="" ) )
+      resave( df_dday, file=paste( "data/aligned_", sitename, char_bysm, ".Rdata", sep="" ) )
 
 
     ##--------------------------------------------------------

@@ -1,4 +1,4 @@
-plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
+plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bysm=FALSE, use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
 
   # ## Debug ----------------
   # sitename   = "FR-Pue"
@@ -41,8 +41,16 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
     char_fapar <- ""
   }
 
+  if (bysm){
+    char_bysm <- "_bysm"
+  } else {
+    char_bysm <- ""
+  }
+
   before <- 30
   after  <- 100
+
+  siteinfo <- read.csv( "soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
 
   ##------------------------------------------------
   ## Load data
@@ -51,13 +59,26 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   if (testprofile) dir <- "data/" else dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
   infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
-  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) 
-  droughts <- nn_fluxnet[[ sitename ]]$droughts        
+  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )
+
+  ## Get drought events. Default defined by fLUE, alternative (bysm=TRUE) defined by soil moisture threshold 0.5 (see 'nn_fVAR_fluxnet2015.R')
+  if (bysm){
+    ## Get soil moisture droughts
+    print("get drought events ...")
+    df$is_drought_bysoilm <- ( df$soilm_mean < 0.5 )
+    droughts <- get_consecutive( 
+                                df$is_drought_bysoilm, 
+                                leng_threshold = 3, 
+                                do_merge       = FALSE
+                                )
+  } else {
+    droughts <- nn_fluxnet[[ sitename ]]$droughts
+  }
 
   load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
   
-  load( paste( "data/aligned_", sitename, ".Rdata", sep="" ) ) # loads data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
-  load( paste( "data/df_dday_aggbydday_", sitename, ".Rdata", sep="" ) ) # loads 'df_dday_aggbydday'
+  load( paste( "data/aligned_", sitename, char_bysm, ".Rdata", sep="" ) ) # loads data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
+  load( paste( "data/df_dday_aggbydday_", sitename, char_bysm, ".Rdata", sep="" ) ) # loads 'df_dday_aggbydday'
   
   if ( is.element( sitename, missing_pri ) )      avl_pri <- FALSE else avl_pri <- TRUE
   if ( any(!is.na(df_dday_aggbydday$dscci_med)) ) avl_pri <- TRUE  else avl_pri <- FALSE
@@ -91,7 +112,7 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use
   ##------------------------------------------------
   if (verbose) print("plotting muiltipanel ...")
   lue <- TRUE
-  panelfiln <- paste( "fig_nn_fluxnet2015/aligned/aligned_potentialgpp_", sitename, "_", nam_target, char_fapar, ".pdf", sep="")
+  panelfiln <- paste( "fig_nn_fluxnet2015/aligned/aligned_potentialgpp_", sitename, "_", nam_target, char_fapar, char_bysm, ".pdf", sep="")
 
   alpha <- 0.3/(nrow(droughts))
   xvals <- (-before:after)+1

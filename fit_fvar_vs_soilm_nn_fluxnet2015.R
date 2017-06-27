@@ -199,10 +199,24 @@ for (sitename in do.sites){
 
 
     ##------------------------------------------------
+    ## Plot EVI vs. soil moisture
+    ##------------------------------------------------
+    pdf( paste( "fig_nn_fluxnet2015/evi_vs_soilm/evi_vs_soilm_mean_", sitename, ".pdf", sep="" ), width=6, height=5 )
+
+      par(las=1)
+      plot( nice$soilm_mean, nice$evi, xlim=c(0,1), ylim=c(0,1.2), pch=16, xlab="soil water content (fraction)", ylab="EVI", col=add_alpha("springgreen4", 0.2) )
+      bp <- boxplot( evi ~ insinterval, data=nice, main=sitename, col=NA, las=1, outline = FALSE, na.rm=TRUE, add=TRUE, at=(sintervals[1:nsintervals]+(1.0/(2*nsintervals))), boxwex=0.05, axes=FALSE )
+      abline( h=1.0, lwd=0.5 )
+
+    dev.off()
+
+
+    ##------------------------------------------------
     ## Plot the same again but now not into PDFs so that it will be included in knitted file
     ##------------------------------------------------
     if ( sitename %in% c( "AU-DaP", "FR-Pue", "IT-PT1") ){
 
+      ## fLUE vs. soil moisture
       par(las=1)
       plot( nice$soilm_mean, nice$fvar, xlim=c(0,1), ylim=c(0,1.2), pch=16, xlab="soil water content (fraction)", ylab="fLUE", col=add_alpha("royalblue3", 0.2) )
       bp <- boxplot( fvar ~ insinterval, data=nice, main=sitename, col=NA, las=1, outline = FALSE, na.rm=TRUE, add=TRUE, at=(sintervals[1:nsintervals]+(1.0/(2*nsintervals))), boxwex=0.05, axes=FALSE )

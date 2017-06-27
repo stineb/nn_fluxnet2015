@@ -106,6 +106,7 @@ if (!file.exists("fig_nn_fluxnet2015/aligned")) system("mkdir fig_nn_fluxnet2015
 if (!file.exists("fig_nn_fluxnet2015/aligned_cluster")) system("mkdir fig_nn_fluxnet2015/aligned_cluster")
 if (!file.exists("fig_nn_fluxnet2015/pot_vs_act_NN/")) system("mkdir fig_nn_fluxnet2015/pot_vs_act_NN/")
 if (!file.exists("fig_nn_fluxnet2015/hist")) system("mkdir fig_nn_fluxnet2015/hist")
+if (!file.exists("fig_nn_fluxnet2015/evi_vs_soilm")) system("mkdir fig_nn_fluxnet2015/evi_vs_soilm")
 if (!file.exists("./data/profile")) system("mkdir ./data/profile")
 ```
 
@@ -610,6 +611,7 @@ source("cluster_step2_nn_fluxnet2015.R")
 ```
 
 The following figure shows the dependence of the total within-cluster sum of squared differences from the cluster mean, 
+
 ```{r echo=FALSE}
 ## For visualisation of within-cluster SS vs. number of clusters, do K-means clustering for a set of numbers of clusters (1:9)
 kclusts <- data.frame( k=1:9 ) %>% group_by(k) %>% do( kclust=kmeans( as.array(mega), .$k ) )
@@ -623,7 +625,8 @@ plt <- ggplot( clusterings, aes(k, tot.withinss) ) + geom_line()
 print( plt )
 ```
 
-This figure shows a visualisation of the mean cluster response (centers)
+The following figure shows a visualisation of the mean cluster response (centers)
+
 ```{r echo=FALSE}
 plot(outkmeans$centers[1,1:3], type='l', ylim=c(0,1.2), col='springgreen4' )
 points(outkmeans$centers[1,1:3], col='springgreen4', pch=16 )
@@ -641,7 +644,8 @@ legend( "bottomleft", c("cluster 1", "cluster 2"), lty=c(1,2), bty="n" )
 legend( "bottom", c("fLUE", expression( paste("EVI / EVI"[0]))), col=c('tomato', 'springgreen4'), lty=1, bty="n" )
 ```
 
-This figure shows a histogram of the greenness changes (median of third bin, representing days 21-40 into fLUE droughts) by cluster 1 and 2.
+The following figure shows a histogram of the greenness changes (median of third bin, representing days 21-40 into fLUE droughts) by cluster 1 and 2.
+
 ```{r echo=FALSE}
 out <- hist( df_cluster$fapar3, breaks=25, plot=FALSE )
 par( las=1 )
@@ -700,7 +704,7 @@ The script produces the following figures:
 
 This script also evaluates the correlation of water table depth site data from Fan & Miguez-Macho (2013) compared with De Graaf et al. (2015). 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 source("plot_overview_nn_fluxnet2015.R")
 ```
 

@@ -679,7 +679,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
 
         ##------------------------------------------------
-        ## Get GPP droughts
+        ## Get fLUE droughts
         ##------------------------------------------------
         print("get drought events ...")
         nice$fvar_smooth_filled <- approx( nice$year_dec, nice$fvar_smooth, xout=nice$year_dec )$y
@@ -689,7 +689,6 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                                     leng_threshold = 10, 
                                     do_merge       = FALSE
                                     )
-
 
         ##------------------------------------------------
         ## Prune identified drought events and update is_drought_byvar
