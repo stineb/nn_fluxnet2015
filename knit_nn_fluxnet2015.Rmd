@@ -11,9 +11,9 @@ header-includes:
    - \usepackage{amsmath}
 ---
 
-This R-Markdown document provides step-by-step instructions for executing the analysis and producing figures presented in XXX. The starting point of the present collection of scripts is the data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` which contains all the data used for the NN training and analysis. Further information about data processing and creating the data file is given below (section Data preparation). Using R-Markdown here is supposed to allow for  reproducibility of published results - from original data files to published figures. 
+This R-Markdown document provides step-by-step instructions for executing the analysis and producing figures presented in the paper *Quantifying soil moisture control on light use efficiency across biomes* by Stocker et al. The starting point of the present collection of scripts is the data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` which contains all the data used for the neural network (NN) training and analysis. Further information about data processing and creating the data file is given below (section 'Data processing'). Using RMarkdown and open access code available through github (https://github.com/stineb/nn_fluxnet2015) is supposed to allow for full reproducibility of published results - from downloaded, publicly accessible data files to published figures. 
 
-This data file, as well as all scripts executed here, are is provided through under a XXX license, written by Benjamin Stocker, and distributed through github XXX. 
+This data file, as well as all scripts executed here, are is provided through under a XXX license, written by Benjamin Stocker. 
 
 ## Approach
 
