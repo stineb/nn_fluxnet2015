@@ -133,9 +133,9 @@ The data is organised as a nested list of dataframes. Inside fluxnet$<sitename>,
 ```{r}
 str(fluxnet$`AR-SLu`, max.level = 1)
 ```
-Daily data (`ddf`) is used here.
+Daily data (`ddf`) is used here. This contains the following set of data frames:
 ```{r}
-str(fluxnet$`AR-SLu`, max.level = 1)
+str(fluxnet$`AR-SLu`$ddf, max.level = 1)
 ```
 
 - `s11`: contains P-model and SPLASH outputs of simulation s11 (water holding capacity is 220 mm).
@@ -163,7 +163,7 @@ source("plot_soilm_fluxnet.R")
 plot_soilm_fluxnet( "US-Var", fluxnet[[ "US-Var" ]]$ddf, makepdf=FALSE )
 ```
 
-To produce respective plots as PDFs for all sites, do:
+To produce respective plots for all sites (PDFs stored in `./fig/soilm/`), do:
 ```{r eval=FALSE}
 for (sitename in ls(fluxnet)){
   plot_soilm_fluxnet( sitename, fluxnet[[ sitename ]]$ddf, makepdf=TRUE )
@@ -444,10 +444,10 @@ print( dplyr::select( out, mysitename, successcode ) )
 ```
 
 | successcode | meaning                                                               |
-| ---         | --------------------------------------------------------------------- |
-| 1   | success, droughts identified |
-| 2   | success, no droughts identified (fLUE drought days make up less than 2% of all days.) |
-| 3   | failed quality check |
+| ----------- | --------------------------------------------------------------------- |
+| 1           | success, droughts identified |
+| 2           | success, no droughts identified (fLUE drought days make up less than 2% of all days.) |
+| 3           | failed quality check |
 
 
 #### Batch quality check

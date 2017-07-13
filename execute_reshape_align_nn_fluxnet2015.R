@@ -27,7 +27,7 @@ df_dday_aggbydday_agg <- c()
 
 for (sitename in do.sites){
 
-  # print( paste( "reshaping for site", sitename ) )
+  print( paste( "reshaping for site", sitename ) )
   out <- reshape_align_nn_fluxnet2015( sitename, nam_target="lue_obs_evi", overwrite=TRUE, verbose=FALSE )
 
   if (!is.na(out$df_dday))           df_dday_agg           <- rbind( df_dday_agg,           out$df_dday )
