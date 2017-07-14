@@ -115,15 +115,11 @@ Define path variable used throughout all scripts and functions. `myhome` is used
 workingdir <- getwd()
 print( paste("working directory directory:", workingdir ) )
 myhome <- "/alphadata01/bstocker/"
+if (!file.exists("./data")) system( "mkdir ./data" )
 ```
 
 ### 2. Data processing
-The scripts used to process downloaded data are not provided here but steps are described below. Instead, the data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` contains for each site all the processed data used for the NN training and all subsequent analyses. 
-
-Get this file and store it in `./data` by
-```{r}
-if (!file.exists("./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata")) system( "wget http://bstocker.net/downloads/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata ./data/" )
-```
+The data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` contains for each site all the data used for the NN training and all subsequent analyses. The scripts used to process downloaded data are not provided here but steps are described below.
 
 Load the data file.
 ```{r}
@@ -159,12 +155,14 @@ All models are driven by observed precipitation, measured at the FLUXNET sites.
 
 The following creates a plot showing alternative soil moisture time series (observations and models) for one site ('US-Var').
 ```{r message=FALSE, warning=FALSE}
+if (!file.exists("fig/soilm")) system("mkdir -p fig/soilm")
 source("plot_soilm_fluxnet.R")
 plot_soilm_fluxnet( "US-Var", fluxnet[[ "US-Var" ]]$ddf, makepdf=FALSE )
 ```
 
 To produce respective plots for all sites (PDFs stored in `./fig/soilm/`), do:
 ```{r eval=FALSE}
+system("mkdir -p ./fig/soilm/")
 for (sitename in ls(fluxnet)){
   plot_soilm_fluxnet( sitename, fluxnet[[ sitename ]]$ddf, makepdf=TRUE )
 }
@@ -288,6 +286,7 @@ source('profile_soilm_neuralnet.R')
 profile_soilm_neuralnet(
   "FR-Pue",
   nam_target="lue_obs_evi",
+  outdir="./data/profile/",
   soilm_threshold=seq( 0.45, 0.55, 0.05 ), ## reduced range to speed up things
   varnams_swc=c("soilm_swbm"),  ## only SWBM soil moisture to speed up things
   packages="nnet",
@@ -482,6 +481,7 @@ knitr::kable( head( overview, n=7 ), caption = "**Table**: First seven rows of o
 #### Fit functional form: fLUE versus soil moisture
 Fit a quadratic function to the relationship between fLUE and soil moisture for each site. This creates figures in `./fig_nn_fluxnet2015/fvar_vs_soilm/`, and stores data for all sites in `data/fvar_vs_soilm.Rdata` (medians of fLUE by soil moisture 20%-quantiles) and `data/fitparams.Rdata` (fit parameters of quadratic fit function). This also complements the overview table, stored as `data/overview_data_fluxnet2015_L2.Rdata`. The figures included below are three examples of the fit figures created for all sites (see Figure S12 in SI of paper). This also complements overview table and creates file `data/overview_data_fluxnet2015_L2.Rdata`.
 ```{r warning=FALSE}
+system( "mkdir -p ./fig_nn_fluxnet2015/fvar_vs_soilm" )
 source( "fit_fvar_vs_soilm_nn_fluxnet2015.R" )
 ```
 
@@ -525,6 +525,7 @@ plot_bysite_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE,
 
 To get plots for all sites, do 
 ```{r message=FALSE}
+system( "mkdir -p ./fig_nn_fluxnet2015/panel_potentialgpp/" )
 source( "execute_plot_bysite_nn_fluxnet2015.R" )
 ```
 
@@ -592,6 +593,7 @@ Remaining sites (red and blue bars in histogram above) are grouped by their para
 This is based on aligned and binned data, as illustrated in the figure below, where the lines represent medians of data aligned by drought events, boxes represent values binned into 20 day periods (1 before and 2 after drought onset), green dots are medians of binned EVI data, normalised with respect to the level in bin 1 (EVI/EVI$_0$) and red dots are medians of binned fLUE data.
 
 ```{r}
+if (!file.exists("fig_nn_fluxnet2015/aligned_binned")) system("mkdir fig_nn_fluxnet2015/aligned_binned")
 source("get_aggresponse_binned.R")
 out <- get_aggresponse_binned( "FR-Pue", makepdf = FALSE )
 ```

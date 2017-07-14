@@ -1,8 +1,9 @@
-profile_soilm_neuralnet <- function( sitename, nam_target="gpp_obs", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, varnams_swc=NA, soilm_threshold=NA, packages="nnet", overwrite_profile=TRUE, nrep=1, testprofile=FALSE, makepdf=TRUE ){
+profile_soilm_neuralnet <- function( sitename, nam_target="gpp_obs", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, varnams_swc=NA, soilm_threshold=NA, packages="nnet", overwrite_profile=TRUE, nrep=1, makepdf=TRUE ){
 
   # ## XXX debug----------------
   # sitename          = "FR-Pue"
   # nam_target        = "lue_obs_evi"
+  # outdir            = "./data/profile/"
   # soilm_threshold   = 0.5
   # varnams_swc       = c("soilm_swbm")
   # packages          = "nnet"
