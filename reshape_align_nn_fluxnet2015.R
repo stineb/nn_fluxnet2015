@@ -14,34 +14,34 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
   require( dplyr )
   require( cgwtools )
 
-  source( "get_consecutive.R" )	
+  source( "get_consecutive.R" ) 
 
-	## check and override if necessary
-	if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
-	  plotlue <- TRUE
-	  if (nam_target=="lue_obs_evi"){
-	    fapar_data <- "evi"
-	  } else if (nam_target=="lue_obs_fpar"){
-	    fapar_data <- "fpar"
-	  }
-	  if (use_fapar){
-	    print("WARNING: setting use_fapar to FALSE")
-	    use_fapar <- FALSE
-	  }
-	}
+  ## check and override if necessary
+  if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
+    plotlue <- TRUE
+    if (nam_target=="lue_obs_evi"){
+      fapar_data <- "evi"
+    } else if (nam_target=="lue_obs_fpar"){
+      fapar_data <- "fpar"
+    }
+    if (use_fapar){
+      print("WARNING: setting use_fapar to FALSE")
+      use_fapar <- FALSE
+    }
+  }
 
-	## identifier for output files
-	if (use_fapar){
-	  if (nam_target=="lue_obs_evi"){
-	    char_fapar <- "_withEVI"
-	  } else if (nam_target=="lue_obs_fpar"){
-	    char_fapar <- "_withFPAR"
-	  } else {
-	    print("ERROR: PROVIDE VALID FAPAR DATA!")
-	  }
-	} else {
-	  char_fapar <- ""
-	}
+  ## identifier for output files
+  if (use_fapar){
+    if (nam_target=="lue_obs_evi"){
+      char_fapar <- "_withEVI"
+    } else if (nam_target=="lue_obs_fpar"){
+      char_fapar <- "_withFPAR"
+    } else {
+      print("ERROR: PROVIDE VALID FAPAR DATA!")
+    }
+  } else {
+    char_fapar <- ""
+  }
 
   if (bysm){
     char_bysm <- "_bysm"
@@ -49,19 +49,19 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
     char_bysm <- ""
   }
 
-	before <- 30
-	after  <- 100
+  before <- 30
+  after  <- 100
 
-	load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
+  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
 
-	## Bins for different variables
-	fvarbins  <- seq( from=-20, to=40, by=20 )
-	faparbins <- seq( from=-20, to=40, by=20 )
-	iwuebins  <- seq( from=-30, to=60, by=30 )
+  ## Bins for different variables
+  fvarbins  <- seq( from=-20, to=40, by=20 )
+  faparbins <- seq( from=-20, to=40, by=20 )
+  iwuebins  <- seq( from=-30, to=60, by=30 )
 
-	bincentres_fvar  <- fvarbins[1:(length(fvarbins)-1)]   + (fvarbins[2]-fvarbins[1])/2
-	bincentres_fapar <- faparbins[1:(length(faparbins)-1)] + (faparbins[2]-faparbins[1])/2
-	bincentres_iwue  <- iwuebins[1:(length(iwuebins)-1)]   + (iwuebins[2]-iwuebins[1])/2
+  bincentres_fvar  <- fvarbins[1:(length(fvarbins)-1)]   + (fvarbins[2]-fvarbins[1])/2
+  bincentres_fapar <- faparbins[1:(length(faparbins)-1)] + (faparbins[2]-faparbins[1])/2
+  bincentres_iwue  <- iwuebins[1:(length(iwuebins)-1)]   + (iwuebins[2]-iwuebins[1])/2
 
   if ( !is.element( sitename, missing_pri ) ) { avl_pri <- TRUE } else { avl_pri <- FALSE }
 
@@ -383,7 +383,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
 
         } else {
 
-        	df_dday_mte <- NA
+          df_dday_mte <- NA
 
         }
 
