@@ -15,17 +15,17 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
   require( dplyr )
   require( abind )
 
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/analyse_modobs.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/add_alpha.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/get_consecutive.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/predict_nn.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/remove_outliers.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/niceify.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/get_evianomalies_fluxnet.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/cutna_headtail.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/prune_droughts.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/get_iwue.R", sep="" ) )
-  source( paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/cleandata_nn.R", sep="" ) )
+  source( "analyse_modobs.R" )
+  source( "add_alpha.R" )
+  source( "get_consecutive.R" )
+  source( "predict_nn.R" )
+  source( "remove_outliers.R" )
+  source( "niceify.R" )
+  source( "get_evianomalies_fluxnet.R" )
+  source( "cutna_headtail.R" )
+  source( "prune_droughts.R" )
+  source( "get_iwue.R" )
+  source( "cleandata_nn.R" )
 
   ## IMPORTANT: USE SOILMOISTURE FROM S13 FOR NN-TRAINING
   load( paste( workingdir, "/data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata", sep="" ) ) # "new data" with s13
