@@ -32,9 +32,18 @@ overview$fgpp_drought <- rep( NA, nrow(overview) )  # during drought days only
 ## Fraction of all days classified as drought (fLUE below threshold)
 overview$fdroughtdays <- rep( NA, nrow(overview) )
 
+# ## fLUE in the lower quartile [bysite]
+# overview$fvar_min <- rep( NA, nrow(overview) )
+
+# ## fLUE in the upper 10% quantile [bysite]
+# overview$fvar_max <- rep( NA, nrow(overview) )
+
 ## perr_XXX: percentage error of P-model, MODIS and MTE during drouht days
 overview$perr_pmodel <- rep( NA, nrow(overview) )
 
+# ## perr_XXX: percentage error of P-model, MODIS and MTE during drouht days
+# overview$perr_modis  <- rep( NA, nrow(overview) )
+# overview$perr_mte    <- rep( NA, nrow(overview) )
 
 ## check and override if necessary
 if ( nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
@@ -78,13 +87,13 @@ for (sitename in do.sites){
   jdx <- jdx + 1
   missing_mte <- FALSE
 
-  infil <- paste( myhome, "/data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  infil <- paste( "data/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"
   ##------------------------------------------------
   load( infil ) ## gets list 'nn_fluxnet'
-  nice             <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )            
+  nice <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )            
   
   idxs_drought <- which( nice$is_drought_byvar )
   overview[ which(overview$mysitename==sitename), ]$perr_pmodel <- 100 * sum( nice$gpp_pmodel[idxs_drought] - nice$gpp_obs[idxs_drought], na.rm=TRUE ) / sum( nice$gpp_obs[idxs_drought], na.rm=TRUE )

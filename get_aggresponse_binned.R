@@ -1,35 +1,47 @@
 get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, makepdf=TRUE, verbose=FALSE ){
 
   require(dplyr)
+  require(tidyr)
 
-  source( "add_alpha.R" )
+  source( "add_alpha.R")
 
-    ## check and override if necessary
-    if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
-      plotlue <- TRUE
-      if (nam_target=="lue_obs_evi"){
-        fapar_data <- "evi"
-      } else if (nam_target=="lue_obs_fpar"){
-        fapar_data <- "fpar"
-      }
-      if (use_fapar){
-        print("WARNING: setting use_fapar to FALSE")
-        use_fapar <- FALSE
-      }
+  # ## XXX debug----------------
+  # sitename   = "FR-Pue"
+  # nam_target = "lue_obs_evi"
+  # use_weights= FALSE    
+  # use_fapar  = FALSE
+  # testprofile= FALSE
+  # makepdf    = FALSE
+  # verbose    = TRUE
+  # ##--------------------------
+
+
+  ## check and override if necessary
+  if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
+    plotlue <- TRUE
+    if (nam_target=="lue_obs_evi"){
+      fapar_data <- "evi"
+    } else if (nam_target=="lue_obs_fpar"){
+      fapar_data <- "fpar"
     }
-
-    ## identifier for output files
     if (use_fapar){
-      if (nam_target=="lue_obs_evi"){
-        char_fapar <- "_withEVI"
-      } else if (nam_target=="lue_obs_fpar"){
-        char_fapar <- "_withFPAR"
-      } else {
-        print("ERROR: PROVIDE VALID FAPAR DATA!")
-      }
-    } else {
-      char_fapar <- ""
+      print("WARNING: setting use_fapar to FALSE")
+      use_fapar <- FALSE
     }
+  }
+
+  ## identifier for output files
+  if (use_fapar){
+    if (nam_target=="lue_obs_evi"){
+      char_fapar <- "_withEVI"
+    } else if (nam_target=="lue_obs_fpar"){
+      char_fapar <- "_withFPAR"
+    } else {
+      print("ERROR: PROVIDE VALID FAPAR DATA!")
+    }
+  } else {
+    char_fapar <- ""
+  }
 
   if (verbose) print(paste("loading", sitename))
 
@@ -40,7 +52,8 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
   df       <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, match( fapar_data, names(.) ), fvar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs, gpp_obs_gfd, iwue )
   droughts <- nn_fluxnet[[ sitename ]]$droughts        
 
-  filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" )
+  filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" ) # loads df_dday, data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
+
   if (file.exists(filn)){
 
     load( filn ) ## loads 'df_dday', defined in 'reshape_align_nn_fluxnet2015.R'
@@ -64,22 +77,44 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
     ##------------------------------------------------
     ## Aggregate FAPAR
     ##------------------------------------------------
+    # ## Get median level of the three variables within each bin, pooling data for all days and instances (drought events)
+    # fapar <- df_dday %>% group_by( infaparbin ) %>% 
+    #                     summarise( fapar  = median( evi , na.rm=TRUE ) ) %>%   ## replace 'evi' with 'fpar' if required
+    #                     complete( infaparbin, fill = list( fapar  = NA ) ) %>% 
+    #                     dplyr::select( fapar )
+
+    # ## Add to array holding fapar response for each site (sites by row, intervals by column)
+    # fapar <- unlist( fapar )[1:nintervals_fapar]
+
+    # ## noramlise fapar response relative to median in first bin
+    # df_dday$evi_norm <- df_dday$evi / fapar[1]
+    
+    # ## save this additional information (evi_norm)
+    # resave( df_dday, file=paste( "data/aligned_", sitename, ".Rdata", sep="" ) )
+
+    # fapar <- fapar / fapar[1]
+
     ## Get median level of the three variables within each bin, pooling data for all days and instances (drought events)
     fapar <- df_dday %>% group_by( infaparbin ) %>% 
-                        summarise( fapar  = median( evi , na.rm=TRUE ) ) %>%   ## replace 'evi' with 'fpar' if required
-                        complete( infaparbin, fill = list( fapar  = NA ) ) %>% 
-                        dplyr::select( fapar )
+                        summarise( evi_norm  = median( evi_norm , na.rm=TRUE ) ) %>%   ## replace 'evi' with 'fpar' if required
+                        complete( infaparbin, fill = list( evi_norm  = NA ) ) %>% 
+                        dplyr::select( evi_norm )
 
     ## Add to array holding fapar response for each site (sites by row, intervals by column)
     fapar <- unlist( fapar )[1:nintervals_fapar]
 
-    ## noramlise fapar response relative to median in first bin
-    df_dday$evi_norm <- df_dday$evi / fapar[1]
-    
-    ## save this additional information (evi_norm)
-    resave( df_dday, file=paste( "data/aligned_", sitename, ".Rdata", sep="" ) )
 
-    fapar <- fapar / fapar[1]
+    # ##------------------------------------------------
+    # ## Aggregate IWUE
+    # ##------------------------------------------------
+    # ## Get median level of the three variables within each bin, pooling data for all days and instances (drought events)
+    # iwue <- df_dday %>% group_by( iniwuebin ) %>% 
+    #                     summarise( iwue  = median( iwue , na.rm=TRUE ) ) %>% 
+    #                     complete( iniwuebin, fill = list( iwue  = NA ) ) %>% 
+    #                     dplyr::select( iwue )
+
+    # ## Add to array holding iwue response for each site (sites by row, intervals by column)
+    # iwue <- unlist( iwue )[1:nintervals_fvar]
 
     ##------------------------------------------------
     ## boxplot fvar vs. days (binned)
@@ -123,13 +158,13 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
     legend( "bottomright", c("fLUE", "EVI"), col=c('tomato', 'springgreen4'), lty=1, bty="n" )
     if (makepdf) dev.off()
 
-  }  else {
+  } else {
 
     print("no aligned file available.")
-    fvar    <- NA
-    fapar   <- NA
-    # iwue    <- NA
-    df_dday <- NA
+    fvar    <- NULL
+    fapar   <- NULL
+    # iwue    <- NULL
+    df_dday <- NULL
 
   }
 

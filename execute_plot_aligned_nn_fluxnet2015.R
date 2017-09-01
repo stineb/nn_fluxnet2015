@@ -6,6 +6,10 @@ source( "plot_aligned_nn_fluxnet2015.R" )
 siteinfo <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( siteinfo, successcode==1 )$mysitename
 
+## add classid column
+tmp <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/siteinfo_fluxnet2015_sofun.csv", sep="") )
+siteinfo <- siteinfo %>% left_join( dplyr::select(tmp, mysitename, classid ), by="mysitename" )
+
 ## Manual settings ----------------
 # do.sites   = c("FR-Pue", "IT-Cpz", "IT-Ro1")
 # do.sites   = "FR-Pue"

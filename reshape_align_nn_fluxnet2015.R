@@ -12,36 +12,37 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
   # #--------------------------
 
   require( dplyr )
+  require( tidyr )
   require( cgwtools )
 
-  source( "get_consecutive.R" )	
+  source( "get_consecutive.R" ) 
 
-	## check and override if necessary
-	if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
-	  plotlue <- TRUE
-	  if (nam_target=="lue_obs_evi"){
-	    fapar_data <- "evi"
-	  } else if (nam_target=="lue_obs_fpar"){
-	    fapar_data <- "fpar"
-	  }
-	  if (use_fapar){
-	    print("WARNING: setting use_fapar to FALSE")
-	    use_fapar <- FALSE
-	  }
-	}
+  ## check and override if necessary
+  if ( nam_target=="lue_obs" || nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
+    plotlue <- TRUE
+    if (nam_target=="lue_obs_evi"){
+      fapar_data <- "evi"
+    } else if (nam_target=="lue_obs_fpar"){
+      fapar_data <- "fpar"
+    }
+    if (use_fapar){
+      print("WARNING: setting use_fapar to FALSE")
+      use_fapar <- FALSE
+    }
+  }
 
-	## identifier for output files
-	if (use_fapar){
-	  if (nam_target=="lue_obs_evi"){
-	    char_fapar <- "_withEVI"
-	  } else if (nam_target=="lue_obs_fpar"){
-	    char_fapar <- "_withFPAR"
-	  } else {
-	    print("ERROR: PROVIDE VALID FAPAR DATA!")
-	  }
-	} else {
-	  char_fapar <- ""
-	}
+  ## identifier for output files
+  if (use_fapar){
+    if (nam_target=="lue_obs_evi"){
+      char_fapar <- "_withEVI"
+    } else if (nam_target=="lue_obs_fpar"){
+      char_fapar <- "_withFPAR"
+    } else {
+      print("ERROR: PROVIDE VALID FAPAR DATA!")
+    }
+  } else {
+    char_fapar <- ""
+  }
 
   if (bysm){
     char_bysm <- "_bysm"
@@ -49,19 +50,19 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
     char_bysm <- ""
   }
 
-	before <- 30
-	after  <- 100
+  before <- 30
+  after  <- 100
 
-	load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
+  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
 
-	## Bins for different variables
-	fvarbins  <- seq( from=-20, to=40, by=20 )
-	faparbins <- seq( from=-20, to=40, by=20 )
-	iwuebins  <- seq( from=-30, to=60, by=30 )
+  ## Bins for different variables
+  fvarbins  <- seq( from=-20, to=40, by=20 )
+  faparbins <- seq( from=-20, to=40, by=20 )
+  iwuebins  <- seq( from=-30, to=60, by=30 )
 
-	bincentres_fvar  <- fvarbins[1:(length(fvarbins)-1)]   + (fvarbins[2]-fvarbins[1])/2
-	bincentres_fapar <- faparbins[1:(length(faparbins)-1)] + (faparbins[2]-faparbins[1])/2
-	bincentres_iwue  <- iwuebins[1:(length(iwuebins)-1)]   + (iwuebins[2]-iwuebins[1])/2
+  bincentres_fvar  <- fvarbins[1:(length(fvarbins)-1)]   + (fvarbins[2]-fvarbins[1])/2
+  bincentres_fapar <- faparbins[1:(length(faparbins)-1)] + (faparbins[2]-faparbins[1])/2
+  bincentres_iwue  <- iwuebins[1:(length(iwuebins)-1)]   + (iwuebins[2]-iwuebins[1])/2
 
   if ( !is.element( sitename, missing_pri ) ) { avl_pri <- TRUE } else { avl_pri <- FALSE }
 
@@ -75,32 +76,11 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
     dir <- paste( myhome, "data/nn_fluxnet/fvar/", sep="" )
   }
   infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
+  if (verbose) print( paste( "reading file", infil ) )
   load( infil ) ## gets list 'nn_fluxnet'
-  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )
+  df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, temp, ppfd, fvar, soilm_mean, vpd, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
 
-  if (is.element("pri", names(df))){
-    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
-    avl_pri <- TRUE
-  } else {
-    avl_pri <- FALSE
-    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue )
-  }
-
-  ## Get drought events. Default defined by fLUE, alternative (bysm=TRUE) defined by soil moisture threshold 0.5 (see 'nn_fVAR_fluxnet2015.R')
-  if (bysm){
-    ## Get soil moisture droughts
-    print("get drought events ...")
-    df$is_drought_bysoilm <- ( df$soilm_mean < 0.5 )
-    droughts <- get_consecutive( 
-                                df$is_drought_bysoilm, 
-                                leng_threshold = 3, 
-                                do_merge       = FALSE
-                                )
-  } else {
-    droughts <- nn_fluxnet[[ sitename ]]$droughts
-  }
-
-  print(infil)
+  droughts <- nn_fluxnet[[ sitename ]]$droughts        
 
   df$bias_pmodel  <-  df$gpp_pmodel / df$gpp_obs
   df$bias_pmodel[ which(is.infinite(df$bias_pmodel)) ] <- NA
@@ -163,8 +143,33 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
       df_dday <- df_dday %>% mutate( infaparbin = cut( as.numeric(dday), breaks = faparbins ) )
       df_dday <- df_dday %>% mutate( iniwuebin  = cut( as.numeric(dday), breaks = iwuebins ) )
 
+      ## add row: normalised VPD
+      tmp <- df_dday %>% group_by( infvarbin ) %>% 
+                         summarise( vpd  = median( vpd , na.rm=TRUE ) ) %>%
+                         complete( infvarbin, fill = list( vpd  = NA ) ) %>% 
+                         dplyr::select( vpd )
+      tmp <- unlist( tmp )[1:(length(fvarbins)-1)]
+      df_dday$dvpd = df_dday$vpd / tmp[1]
+
+      ## add row: normalised soil moisture
+      tmp <- df_dday %>% group_by( infvarbin ) %>% 
+                         summarise( soilm_mean  = median( soilm_mean , na.rm=TRUE ) ) %>%
+                         complete( infvarbin, fill = list( soilm_mean  = NA ) ) %>% 
+                         dplyr::select( soilm_mean )
+      tmp <- unlist( tmp )[1:(length(fvarbins)-1)]
+      df_dday$soilm_norm = df_dday$soilm_mean / tmp[1]
+
+      ## add row: normalised fAPAR (EVI)
+      tmp <- df_dday %>% group_by( infaparbin ) %>% 
+                         summarise( evi  = median( evi , na.rm=TRUE ) ) %>%
+                         complete( infaparbin, fill = list( evi  = NA ) ) %>% 
+                         dplyr::select( evi )
+      tmp <- unlist( tmp )[1:(length(faparbins)-1)]
+      df_dday$evi_norm = df_dday$evi / tmp[1]
+
+
       ## normalise PRI and CCI to mean by fvar-sized-bin number 2 (zerobin)
-      if ( is.element( sitename, missing_pri ) ) avl_pri <- FALSE
+      if ( is.element( sitename, missing_pri ) ) { avl_pri <- FALSE } else { avl_pri <- TRUE }
 
       if ( avl_pri ){
 
@@ -203,6 +208,13 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
                                         summarise(
                                                   ## soil moisture
                                                   soilm_med=median( soilm_mean, na.rm=TRUE ), soilm_upp=quantile( soilm_mean, 0.75, na.rm=TRUE ), soilm_low=quantile( soilm_mean, 0.25, na.rm=TRUE ),
+                                                  soilm_norm_med=median( soilm_norm, na.rm=TRUE ), soilm_norm_upp=quantile( soilm_norm, 0.75, na.rm=TRUE ), soilm_norm_low=quantile( soilm_norm, 0.25, na.rm=TRUE ),
+
+                                                  ## VPD
+                                                  vpd_med=median( vpd, na.rm=TRUE ), vpd_upp=quantile( vpd, 0.75, na.rm=TRUE ), vpd_low=quantile( vpd, 0.25, na.rm=TRUE ),
+
+                                                  ## relative VPD change
+                                                  dvpd_med=median( dvpd, na.rm=TRUE ), dvpd_upp=quantile( dvpd, 0.75, na.rm=TRUE ), dvpd_low=quantile( dvpd, 0.25, na.rm=TRUE ),
 
                                                   ## fLUE
                                                   fvar_med=median( fvar, na.rm=TRUE ), fvar_upp=quantile( fvar, 0.75, na.rm=TRUE ), fvar_low=quantile( fvar, 0.25, na.rm=TRUE ),
@@ -261,20 +273,22 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
 
           before_modis <- floor( max(droughts_modis$len) / 2 )
           after_modis  <- max(droughts_modis$len)
-          data_alg_dry_modis  <- array( NA, dim=c( before_modis+after_modis+1, ncol(nice_to_modis)+1, nrow(droughts_modis) ) )
           
-          for ( iinst in 1:nrow(droughts_modis) ){
-            data_alg_dry_modis[,(ncol(nice_to_modis)+1),iinst] <- ((-before_modis:after_modis)+1)*8 ## calling this 'dday' = drought day
-            for (idx in -before_modis:after_modis){
-              if ( (droughts_modis$idx_start[iinst]+idx)>0 ){
-                for (icol in 1:ncol(nice_to_modis)){
-                  data_alg_dry_modis[ idx+before_modis+1, icol, iinst ] <- nice_to_modis[ droughts_modis$idx_start[iinst]+idx, icol ]
+          if (nrow(droughts_modis)>0){
+            data_alg_dry_modis  <- array( NA, dim=c( before_modis+after_modis+1, ncol(nice_to_modis)+1, nrow(droughts_modis) ) )
+            for ( iinst in 1:nrow(droughts_modis) ){
+              data_alg_dry_modis[,(ncol(nice_to_modis)+1),iinst] <- ((-before_modis:after_modis)+1)*8 ## calling this 'dday' = drought day
+              for (idx in -before_modis:after_modis){
+                if ( (droughts_modis$idx_start[iinst]+idx)>0 ){
+                  for (icol in 1:ncol(nice_to_modis)){
+                    data_alg_dry_modis[ idx+before_modis+1, icol, iinst ] <- nice_to_modis[ droughts_modis$idx_start[iinst]+idx, icol ]
+                  }
                 }
               }
+              ## remove data after drought onset that is no longer classified as drought
+              dropidxs <- which( data_alg_dry_modis[,which(names_alg_modis=="is_drought_byvar"),iinst]==1 & data_alg_dry_modis[,which(names_alg_modis=="dday"),iinst]<0 )
+              data_alg_dry_modis[ dropidxs,,iinst ] <- NA            
             }
-            ## remove data after drought onset that is no longer classified as drought
-            dropidxs <- which( data_alg_dry_modis[,which(names_alg_modis=="is_drought_byvar"),iinst]==1 & data_alg_dry_modis[,which(names_alg_modis=="dday"),iinst]<0 )
-            data_alg_dry_modis[ dropidxs,,iinst ] <- NA
           }
 
           ##--------------------------------------------------------
@@ -304,7 +318,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
 
         } else {
 
-          df_dday_modis <- NA
+          df_dday_modis <- NULL
 
         }
 
@@ -383,7 +397,7 @@ reshape_align_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", by
 
         } else {
 
-        	df_dday_mte <- NA
+          df_dday_mte <- NULL
 
         }
 

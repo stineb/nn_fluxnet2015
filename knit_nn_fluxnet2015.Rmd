@@ -1,19 +1,21 @@
 ---
-title: "Extended Methods for paper *Quantifying soil moisture control on light use efficiency across biomes*"
+title: "Extended Methods for paper *Quantifying soil moisture impacts on light use efficiency across biomes*"
 author: "Benjamin Stocker"
 date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
     toc_float: true
-# output: github_document
 header-includes:
    - \usepackage{amsmath}
 ---
 
-This R-Markdown document provides step-by-step instructions for executing the analysis and producing figures presented in the paper *Quantifying soil moisture control on light use efficiency across biomes* by Stocker et al. The starting point of the present collection of scripts is the data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` which contains all the data used for the neural network (NN) training and analysis. Further information about data processing and creating the data file is given below (section 'Data processing'). Using RMarkdown and open access code available through github (https://github.com/stineb/nn_fluxnet2015) is supposed to allow for full reproducibility of published results - from downloaded, publicly accessible data files to published figures. 
+This R-Markdown document provides step-by-step instructions for executing the analysis and producing figures presented in the paper *Quantifying soil moisture impacts on light use efficiency across biomes* by Stocker et al. (submitted) The starting point of the present collection of scripts is the data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` which contains all the data used for the neural network (NN) training and analysis. Further information about data processing and creating the data file is given below (section 'Data processing'). Using RMarkdown and open access code available through github (https://github.com/stineb/nn_fluxnet2015) is supposed to allow for full reproducibility of published results - from downloaded, publicly accessible data files to published figures. 
 
-This data file, as well as all scripts executed here, are is provided through under a XXX license, written by Benjamin Stocker. 
+## IP information
+All code [in this repository](https://github.com/stineb/nn_fluxnet2015) is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3. Present code is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License (file `./LICENSE`) for more details.
+
+Copyright (C) 2017  Benjamin D. Stocker
 
 ## Approach
 
@@ -82,7 +84,7 @@ The following provides a documentation and instruction to reproduce results pres
 ### 1. Requirements and environment setup
 The execution of the scripts provided here requires the following R packages. Install them if missing (Sorry if some are missing - It's hard to keep the overview):
 ```{r}
-list.of.packages <- c( "dplyr", "tidyr", "broom", "caret", "nnet", "minpack.lm", "LSD", "zoo", "Metrics", "abind", "caTools", "cgwtools", "hydroGOF", "cluster", "ggplot2", "stats", "knitr" )
+list.of.packages <- c( "dplyr", "tidyr", "broom", "caret", "nnet", "minpack.lm", "LSD", "zoo", "Metrics", "abind", "caTools", "cgwtools", "hydroGOF", "cluster", "lattice", "ggplot2", "stats", "knitr", "SPEI" )
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if( length(new.packages) ) install.packages(new.packages)
 ```
@@ -107,15 +109,16 @@ if (!file.exists("fig_nn_fluxnet2015/aligned_cluster")) system("mkdir fig_nn_flu
 if (!file.exists("fig_nn_fluxnet2015/pot_vs_act_NN/")) system("mkdir fig_nn_fluxnet2015/pot_vs_act_NN/")
 if (!file.exists("fig_nn_fluxnet2015/hist")) system("mkdir fig_nn_fluxnet2015/hist")
 if (!file.exists("fig_nn_fluxnet2015/evi_vs_soilm")) system("mkdir fig_nn_fluxnet2015/evi_vs_soilm")
+if (!file.exists("fig_nn_fluxnet2015/ratio_vpdtest")) system("mkdir fig_nn_fluxnet2015/ratio_vpdtest")
+if (!file.exists("fig_nn_fluxnet2015/vpd_vs_soilm")) system("mkdir fig_nn_fluxnet2015/vpd_vs_soilm")
 if (!file.exists("./data/profile")) system("mkdir ./data/profile")
 ```
 
-Define path variable used throughout all scripts and functions. `myhome` is used only by functions where argument `testprofile` is `FALSE`, i.e. when evaluating all analyses for all sites (batch execution). Example profiling and NN evaluation for one site done here (in this RMarkdown document) writes and reads data into `./data/`:
+Define path variable used throughout all scripts and functions. `myhome` is used only by functions where argument `testprofile` is `FALSE`, i.e. when evaluating all analyses for all sites (batch execution). Change `myhome` by hand to the your local parent directory of the present working directory, i.e. where the the repository has been pulled into:
 ```{r}
 workingdir <- getwd()
 print( paste("working directory directory:", workingdir ) )
 myhome <- "/alphadata01/bstocker/"
-if (!file.exists("./data")) system( "mkdir ./data" )
 ```
 
 ### 2. Data processing
@@ -141,7 +144,6 @@ str(fluxnet$`AR-SLu`$ddf, max.level = 1)
 - `inp`: climate and greenness (input) data from the FLUXNET 2015 dataset and MODIS EVI and FPAR.
 - `swc_obs`: observational soil moisture data from the FLUXNET 2015 dataset.
 - `swc_by_etobs`: soil moisture data driven by observational ET.
-
 
 #### Soil moisture
 Soil moisture data is based direct measurements, provided through the FLUXNET 2015 dataset, and five alternative bucket-type models. Measured soil moisture is provided in units of volume water per volume soil. We scaled data by range to within 0 and 1. Due to limited observational soil moisture data availability and mostly unavailable soil moisture data for deep soil layers, we also used simulated soil moisture, provided by alternative, bucket-type soil water balance models.
@@ -293,26 +295,44 @@ profile_soilm_neuralnet(
   nrep=2,
   makepdf=FALSE,
   use_weights=FALSE,
-  overwrite_profile=FALSE,
-  testprofile=TRUE
+  overwrite_profile=TRUE
   )
 ```
 
 The full data from the profiling is now stored in the file `./data/profile/profile_evi_nn_FR-Pue.Rdata`. The best-performing soil moisture threshold (soil water contant as afraction) for dataset `soilm_swbm` is:
 ```{r message=FALSE}
-load("./data/profile/profile_lue_obs_evi_nn_FR-Pue.Rdata")
-print( paste( "best-performing soil moisture threshold:", profile_nn$`FR-Pue`$soilm_swbm$nnet$best_soilm_trh ) )
+load("./data/profile/profile_light_lue_obs_evi_nn_FR-Pue.Rdata")
+print( paste( "best-performing soil moisture threshold:", profile_nn_light$`FR-Pue`$soilm_swbm$nnet$best_soilm_trh[1] ) )
 ```
 
 #### Complete batch execution
-The profiling function described above is executed for 137 sites out of all 166 in the FLUXNET Tier 1 dataset, where modelled soil moisture gave consistent results across different models and was consistent with observed soil moisture where available (observational soil moisture availability is shown above). This step of site exclusion was done by visual judgment based on the comparison of soil moisture time series for each site (Figures created above, see Section '2. Data processing, Soil moisture' and stored in `./fig/soilm/`). The table below shows the judment results (only first 7 rows are shown. Set `n=166` to see the full table).
+The profiling function described above is executed for 135 sites out of all 166 in the FLUXNET Tier 1 dataset, where modelled soil moisture gave consistent results across different models and was consistent with observed soil moisture where available (observational soil moisture availability is shown above). This step of site exclusion was done by visual judgment based on the comparison of soil moisture time series for each site (Figures created above, see Section '2. Data processing, Soil moisture' and stored in `./fig/soilm/`). The table below shows the judment results (only first 7 rows are shown. Set `n=166` to see the full table).
+```{r}
+siteinfo <- read.csv( "soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
+```
+
+The codes (1,2,3,4) used in `soilm_data_usability_fluxnet2015.csv` define the set of soil moisture datasets used for each site. Respective code in `execute_profile_soilm_neuralnet.R` is:
+```{r eval=FALSE}
+## Define soilm moisture datasets to be used based on column 'code'
+sitename <- "FR-Pue"
+if ( dplyr::filter( siteinfo, mysitename==sitename )$code==1 ){
+  varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_etobs", "soilm_etobs_ob", "soilm_obs" )
+} else if ( dplyr::filter( siteinfo, mysitename==sitename )$code==2 ){
+  varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_etobs", "soilm_etobs_ob" )
+} else if ( dplyr::filter( siteinfo, mysitename==sitename )$code==3 ){
+  varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm" )
+} else if ( dplyr::filter( siteinfo, mysitename==sitename )$code==4 ){
+  varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_obs" )
+}
+```
+
+
 ```{r echo=FALSE, results='asis', warning=FALSE}
 library(knitr)
-siteinfo <- read.csv( "soilm_data_usability_fluxnet2015.csv", as.is=TRUE )
 kable( head( dplyr::select( siteinfo, mysitename, code ), n=7 ), caption = "**Table**: Data usability based on soil moisture, **1** = Observational data available for multiple depths. Use observational data for NN. **2** = Observational data incomplete or inconsistent with ET bucket. ET bucket consistent with SPLASH bucket. Use ET bucket for NN. **3** = Observational data incomplete or inconsistent with ET bucket. ET bucket inconsistent with SPLASH bucket. Use SPLASH or SWBM bucket for NN. **0** = No consistent data.")
 ```
 
-Due to its high computational demand when evaluating the profiling function for all 137 sites ("batch execution"), it is executed in parallel for each site on a High Performance Computing cluster (Imperial College London, HPC, server *CX1*). Note, that in this case, profile files are written into (and subsequently read from) `{r} paste( myhome, "data/nn_fluxnet/profile/")` (see argument `testprofile` in various functions). 
+Due to its high computational demand when evaluating the profiling function for all 135 sites ("batch execution"), it is executed in parallel for each site on a High Performance Computing cluster (Imperial College London, HPC, server *CX1*). Note, that in this case, profile files are written into (and subsequently read from) `{r} paste( myhome, "data/nn_fluxnet/profile/")` (see argument `testprofile` in various functions).
 
 To do the batch execution, first, create a text file containing the list of sites for which profiling is to be done:
 ```{r}
@@ -339,7 +359,7 @@ fvar <- apply( profile_nn[[ sitename ]][[ isoilm_data ]]$nnet$var_nn_all / profi
 3. Remove outliers in fLUE (outside 3 times the interquartile range and greater than 1 or negative)
 ```{r eval=FALSE}
 remove_outliers_fXX <- function( vec, coef=1.5 ) {
-  ## use the command boxplot.stats()$out which use the Tukey's method 
+  ## use the command boxplot.stats()$out which use the Tukey's method
   ## to identify the outliers ranged above and below the <coef>*IQR.
   outlier <- boxplot.stats( vec, coef=coef )$out
   outlier <- outlier[ which( outlier>1.0 | outlier<0.0 ) ]
@@ -350,7 +370,7 @@ df_nona$fvar <- remove_outliers_fXX( df_nona$fvar, coef=3.0 )
 ```
 4. Take the mean across soil moisture datasets. Code bit:
 ```{r eval=FALSE}
-nice$fvar <- apply( fvar_by_smdata, 1, FUN=mean, na.rm=TRUE ) 
+nice$fvar <- apply( fvar_by_smdata, 1, FUN=mean, na.rm=TRUE )
 ```
 5. Get fLUE cutoff to define threshold for fLUE droughts. The cutoff is calculated as the lower 5% quantile of a hypothetical symetrical distribution, taken as "mirrored" values in fLUE above 1. This is also illustrated by the histogram in the figure that is created below when executing `nn_fVAR_fluxnet()`.
 ```{r eval=FALSE}
@@ -381,9 +401,9 @@ nice$is_drought_byvar <- ( nice$fvar_smooth_filled < cutoff )
 ```
 10. Identify drought events as periods with consecutive drought days with a minimum length of 10 days. The function `get_consecutive()` (file `get_consecutive.R`) creates the dataframe `droughts` that stores, for each such drought event, the index (with respect to vector `nice$is_drought_byvar`) of its start and its length.
 ```{r eval=FALSE}
-droughts <- get_consecutive( 
-                             nice$is_drought_byvar, 
-                             leng_threshold = 10, 
+droughts <- get_consecutive(
+                             nice$is_drought_byvar,
+                             leng_threshold = 10,
                              do_merge       = FALSE
                              )
 ```
@@ -395,13 +415,13 @@ droughts <- get_consecutive(
   - Prune drought if  LUE$_{\mathrm{pot}}$ multiplied by PPFD and fAPAR is below 5% of its maximum value. This removes erroneously classified droughts during winter in seasonally cold ecosystems.
 This is implemented by:
 ```{r eval=FALSE}
-out <- prune_droughts(  
-                       droughts,   
+out <- prune_droughts(
+                       droughts,
                        nice$is_drought_byvar,
                        nice$fvar_smooth,
-                       nice$fvar_smooth_filled,                                  
-                       mod_pot   = nice$var_nn_pot, 
-                       mod_act   = nice$var_nn_act, 
+                       nice$fvar_smooth_filled,
+                       mod_pot   = nice$var_nn_pot,
+                       mod_act   = nice$var_nn_act,
                        obs       = nice[[ nam_target ]],
                        soilm     = soilm,
                        soilm_mod = soilm_mod,
@@ -413,7 +433,7 @@ out <- prune_droughts(
 The function `nn_fVAR_fluxnet()` implements all steps outlined above and produces four figures, included below. The first shows a histogram of fLUE values (red), the hypothetical symetrical distribution (blue), and fLUE cutoff to delineate fLUE droughts as a red vertical line. The subsequent figures are modelled versus observed LUE of NN$_{\mathrm{pot}}$ during moist days, NN$_{\mathrm{act}}$ during all days and NN$_{\mathrm{act}}$ versus NN$_{\mathrm{pot}}$ during moist days. This corresponds to figures S2 and S3 in the SI of the manuscript, but here only for one site (FR-Pue).
 ```{r warning=FALSE}
 source("nn_fVAR_fluxnet2015.R")
-nn_fVAR_fluxnet( "FR-Pue", nam_target="lue_obs_evi", use_weights=FALSE, makepdf=FALSE, testprofile=TRUE )
+nn_fVAR_fluxnet( "FR-Pue", nam_target="lue_obs_evi", use_weights=FALSE, makepdf=FALSE, testprofile=TRUE, overwrite=TRUE )
 ```
 
 #### Complete batch execution
@@ -423,13 +443,14 @@ Parallel execution on a HPC cluster of `nn_fVAR_fluxnet()` for each site separat
 ```
 
 ### 5. Quality check
-Sites are excluded from further analysis based on performance statistics of the NN model goodness:
+Sites are excluded from further analysis based on data length and performance statistics of the NN model goodness:
 
+1. if the number of days' data used for NN training (after data cleaning, see above) is below 500.
 1. if the mean of LUE$_{\mathrm{act}}$ during fLUE drought days is greater than that of LUE$_{\mathrm{pot}}$
-2. if the percentage RMSE (pRMSE) is greater than 60% or R$^2$ is smaller than 0.3 of  LUE$_{\mathrm{act}}$ compared with  LUE$_{\mathrm{obs}}$. pRMSE is calculated by function `analyse_modobs()` (script `analyse_modobs.R`) as RMSE (root mean square error) divided by the mean of observationsand multiplied by 100.
-3. if the percentage RMSE (pRMSE) is greater than 60% or R$^2$ is smaller than 0.3 of  LUE$_{\mathrm{pot}}$ compared with  LUE$_{\mathrm{obs}}$ during non-fLUE drought days only.
-4. if LUE$_{\mathrm{act}}$ has an R$^2$ of less than 0.15 during fLUE drought days.
-5. if the R$^2$ of LUE$_{\mathrm{act}}$ versus LUE$_{\mathrm{pot}}$ during non-fLUE drought days is below 0.5.
+2. if the RMSE is greater than 2.8 or R$^2$ is smaller than 0.5 for LUE$_{\mathrm{act}}$ compared with  LUE$_{\mathrm{obs}}$.
+3. if the percentage RMSE (pRMSE) is greater than 80% or R$^2$ is smaller than 0.3 for LUE$_{\mathrm{pot}}$ compared with  LUE$_{\mathrm{obs}}$ during non-fLUE drought days only. pRMSE is calculated by function `analyse_modobs()` (script `analyse_modobs.R`) as RMSE (root mean square error) divided by the mean of observationsand multiplied by 100.
+4. if LUE$_{\mathrm{act}}$ has an R$^2$ of less than 0.17 during fLUE drought days.
+5. if the R$^2$ of LUE$_{\mathrm{act}}$ versus LUE$_{\mathrm{pot}}$ during non-fLUE drought days is below 0.5 or their RMSE is above 1.6.
 
 This is implemented by function `nn_getfail_fluxnet()` which returns a dataframe (one row) with all the performance metrics for this site.
 ```{r warning=FALSE, message=FALSE}
@@ -450,20 +471,20 @@ print( dplyr::select( out, mysitename, successcode ) )
 
 
 #### Batch quality check
-Up to this point, all steps are carried out for one single example site and outputs are written into and read from `./data`. In order to enable further analyses and make the study fully reproducible, we provide all site-specific "intermediate" files created by function `nn_fVAR_fluxnet()` that stores data, including fLUE. This avoids having to do the batch execution of `profile_soilm_neuralnet()` and `nn_fVAR_fluxnet()`. Data can be downloaded and extracted as follows:
+Up to this point, all steps are carried out for one single example site and outputs are written into and read from `./data`. In order to enable further analyses and make the study fully reproducible, we provide all site-specific "intermediate" files created by function `nn_fVAR_fluxnet()` that stores data, including fLUE. This avoids having to do the batch execution of `profile_soilm_neuralnet()` and `nn_fVAR_fluxnet()`. Data can be downloaded and extracted as follows (uncomment these lines in file `knit_nn_fluxnet2015.Rmd`):
 ```{r}
-dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
-if (length(list.files(dir))==0) {
-  system( paste( "wget http://bstocker.net/downloads/fvar.zip", dir ) )
-  system( paste( "unzip ", dir, "fvar.zip", sep="" ) )
-}
+# dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
+# if (length(list.files(dir))==0) {
+#   system( paste( "wget http://bstocker.net/downloads/fvar.zip", dir ) )
+#   system( paste( "unzip ", dir, "fvar.zip", sep="" ) )
+# }
 ```
 Note that this stores data not in `./data/` but in `{r} print( paste( myhome, "/data/nn_fluxnet/fvar/", sep="" ) )`. Once data is downloaded and extracted, get the success code and performance statistics for all sites in one dataframe and write it to the file `./successcodes.csv`.
 ```{r message=FALSE, warning=FALSE}
 source( "nn_getfail_fluxnet2015.R" )
 ```
 
-Out of the 137 sites for which the profiling was carried out (consistent soil moisture time series), 80 sites have a success code of 1 or 2, i.e. the NN-based method to quantify fLUE and identify fLUE droughts worked acceptably. These 80 sites are used for all subsequent analyses and are finally assigned to the four clusters. 
+Out of the 135 sites for which the profiling was carried out (consistent soil moisture time series), 80 sites have a success code of 1 or 2, i.e. the NN-based method to quantify fLUE and identify fLUE droughts worked acceptably. These 80 sites are used for all subsequent analyses and are finally assigned to the four clusters. 
 
 ### 6. Evaluations of full time series by site
 
@@ -479,7 +500,7 @@ knitr::kable( head( overview, n=7 ), caption = "**Table**: First seven rows of o
 ```
 
 #### Fit functional form: fLUE versus soil moisture
-Fit a quadratic function to the relationship between fLUE and soil moisture for each site. This creates figures in `./fig_nn_fluxnet2015/fvar_vs_soilm/`, and stores data for all sites in `data/fvar_vs_soilm.Rdata` (medians of fLUE by soil moisture 20%-quantiles) and `data/fitparams.Rdata` (fit parameters of quadratic fit function). This also complements the overview table, stored as `data/overview_data_fluxnet2015_L2.Rdata`. The figures included below are three examples of the fit figures created for all sites (see Figure S12 in SI of paper). This also complements overview table and creates file `data/overview_data_fluxnet2015_L2.Rdata`.
+Fit a quadratic function to the relationship between fLUE and soil moisture for each site. This creates figures in `./fig_nn_fluxnet2015/fvar_vs_soilm/`, and stores data for all sites in `data/fvar_vs_soilm.Rdata` (medians of fLUE by soil moisture 20%-quantiles) and `data/fitparams.Rdata` (fit parameters of quadratic fit function). This also complements the overview table, stored as `data/overview_data_fluxnet2015_L2.Rdata`. The figures included below are three examples of the fit figures created for all sites (see Figure S12 in SI of paper).
 ```{r warning=FALSE}
 system( "mkdir -p ./fig_nn_fluxnet2015/fvar_vs_soilm" )
 source( "fit_fvar_vs_soilm_nn_fluxnet2015.R" )
@@ -520,7 +541,7 @@ source( "aggregate_nn_fluxnet2015.R" )
 This creates the time series plot, Fig. 1 in the manuscript.
 ```{r warning=FALSE, message=FALSE}
 source( "plot_bysite_nn_fluxnet2015.R" )
-plot_bysite_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE, testprofile=FALSE )
+plot_bysite_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE )
 ```
 
 To get plots for all sites, do 
@@ -542,9 +563,8 @@ Third, `df_dday` is aggregated (median and upper and lower quartiles) with respe
 The function `reshape_align_nn_fluxnet2015()` executes above steps and returns a list of the dataframes `df_dday`, `df_dday_modis`, `df_dday_mte`, and `df_dday_aggbydday`:
 ```{r}
 source( "reshape_align_nn_fluxnet2015.R" )
-out <- reshape_align_nn_fluxnet2015( "FR-Pue", testprofile=FALSE )
-print( "content of returned list:" )
-ls( out )
+out <- reshape_align_nn_fluxnet2015( "FR-Pue" )
+print( "content of returned list:" ); ls( out )
 ```
 
 The script `execute_reshape_align_nn_fluxnet2015()` executes this function for all sites where fLUE droughts are identified (`successcode==1`) and combines dataframes into combined large dataframes containing all sites' data, saved in `data/data_aligned_agg.Rdata`:
@@ -562,7 +582,7 @@ source( "execute_reshape_align_nn_fluxnet2015.R" )
 Panel plots for soil moisture, fLUE, EVI, CCI, and model biases, all aligned by fLUE drought onset and aggregated across drought events (Fig. 2 in paper main text), are created by the function `plot_aligned_nn_fluxnet2015()`: 
 ```{r}
 source( "plot_aligned_nn_fluxnet2015.R" )
-plot_aligned_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE, testprofile=TRUE )
+plot_aligned_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE )
 ```
 
 Create panel plots for all sites and save to PDFs (`fig_nn_fluxnet2015/aligned/aligned_potentialgpp_<sitename>_nam_target_lue_obs_evi.pdf`) by doing:
@@ -612,49 +632,6 @@ The script `cluster_step2_nn_fluxnet2015.R` executes both the collecting of binn
 source("cluster_step2_nn_fluxnet2015.R")
 ```
 
-The following figure shows the dependence of the total within-cluster sum of squared differences from the cluster mean, 
-
-```{r echo=FALSE}
-## For visualisation of within-cluster SS vs. number of clusters, do K-means clustering for a set of numbers of clusters (1:9)
-kclusts <- data.frame( k=1:9 ) %>% group_by(k) %>% do( kclust=kmeans( as.array(mega), .$k ) )
-
-## use library "broom" to get statistics of kmeans clustering, from https://cran.r-project.org/web/packages/broom/vignettes/kmeans.html
-clusterings <- kclusts %>% group_by(k) %>% do(glance(.$kclust[[1]]))
-
-## plot total within-SS vs. number of clusters
-library( ggplot2 )
-plt <- ggplot( clusterings, aes(k, tot.withinss) ) + geom_line()
-print( plt )
-```
-
-The following figure shows a visualisation of the mean cluster response (centers)
-
-```{r echo=FALSE}
-plot(outkmeans$centers[1,1:3], type='l', ylim=c(0,1.2), col='springgreen4' )
-points(outkmeans$centers[1,1:3], col='springgreen4', pch=16 )
-
-lines(outkmeans$centers[1,4:6], col='tomato' )
-points(outkmeans$centers[1,4:6], col='tomato', pch=16 )
-
-lines(outkmeans$centers[2,1:3], col='springgreen4', lty=2 )
-points(outkmeans$centers[2,1:3], col='springgreen4', pch=16 )
-
-lines(outkmeans$centers[2,4:6], col='tomato', lty=2 )
-points(outkmeans$centers[2,4:6], col='tomato', pch=16 )
-
-legend( "bottomleft", c("cluster 1", "cluster 2"), lty=c(1,2), bty="n" )
-legend( "bottom", c("fLUE", expression( paste("EVI / EVI"[0]))), col=c('tomato', 'springgreen4'), lty=1, bty="n" )
-```
-
-The following figure shows a histogram of the greenness changes (median of third bin, representing days 21-40 into fLUE droughts) by cluster 1 and 2.
-
-```{r echo=FALSE}
-out <- hist( df_cluster$fapar3, breaks=25, plot=FALSE )
-par( las=1 )
-hist( dplyr::filter( df_cluster, alignedcluster==1 )$fapar3, breaks=out$breaks, col=add_alpha("tomato", 0.5), xlab=expression(paste("1 - ", Delta, "fAPAR")), main="" )
-hist( dplyr::filter( df_cluster, alignedcluster==2 )$fapar3, breaks=out$breaks, col=add_alpha("royalblue2", 0.5), add=TRUE )
-```
-
 
 ### 9. Create figures
 At this point, all analyses are completed. Remaining steps create (remaining) figures used in the paper.
@@ -689,24 +666,36 @@ source("plot_bycluster_nn_fluxnet2015.R")
 The script `plot_overview_nn_fluxnet2015.R` combines the overview table (`data/overview_data_fluxnet2015_L5.Rdata`) with complementary site data extracted from global datasets:
 
 - Water table depth from Fan & Miguez-Macho (2013). Dataframe `df_wtd` from `./data/wtd_fluxnet2015.Rdata`. Data prepared by `get_watertable_fluxnet2015.R`. Original files downloaded on May 16, 2017 from [glowasis.deltares.nl](https://glowasis.deltares.nl/thredds/catalog/opendap/opendap/Equilibrium_Water_Table/catalog.html?dataset=glowasis/opendap/Equilibrium_Water_Table/Eurasia_model_wtd_v2.nc), selecting `/thredds/fileServer/opendap/opendap/Equilibrium_Water_Table/Eurasia_model_wtd_v2.nc`
-- Water table depth from De Graaf et al. (2015). Dataframe `df_wtd_degraaf` from `data/wtd_degraaf_fluxnet2015.Rdata`. Data prepared by `get_watertable_degraaf_fluxnet2015.R`. Original file provided by I. De Graaf (29 May 2017). 
+- Water table depth from De Graaf et al. (2015). Dataframe `df_wtd_degraaf` from `data/wtd_degraaf_fluxnet2015.Rdata`. Data prepared by `get_watertable_degraaf_fluxnet2015.R`. Original file provided by I. De Graaf (29 May 2017).
 - Budyko regime (energy limited, water limited, transitional) from Greve et al. (2014). Dataframe `df_greve` from `./data/greve_fluxnet2015.Rdata`. Data prepared by `get_greve.R`. Original file provided by P. Greve.
 - Aridity index. Dataframe `df_ai` from `./data/ai_fluxnet2015.Rdata`. Data prepared by `get_aridityindex.R` based on SPLASH model outputs from simulation s13 (see above).
 - Average actual over potential evapotranspiration (AET/PET). Dataframe `df_alpha` from `./data/alpha_fluxnet2015.Rdata`. Data prepared by `get_alpha.R` based on SPLASH model outputs from simulation s11 (see above).
-- Soil parameters from HWSD, data by Shangguan et al., 2014. Dataframe `df_soil` from `./data/soilparams_fluxnet2015.Rdata` prepared by `get_soilparams.R`. Original files downloaded from http://globalchange.bnu.edu.cn/research/soilwd.jsp (26 May 2017). 
+- Soil parameters from HWSD, data by Shangguan et al., 2014. Dataframe `df_soil` from `./data/soilparams_fluxnet2015.Rdata` prepared by `get_soilparams.R`. Original files downloaded from http://globalchange.bnu.edu.cn/research/soilwd.jsp (26 May 2017).
 Complemented overview table is saved as `data/overview_data_fluxnet2015_L6.Rdata`.
 
-The script produces the following figures: 
+The script produces the following figures:
 
 - `fig_nn_fluxnet2015/overview_clusterX.pdf` where `X` is 1, 2, 3 and 4. This is the colored overview table of all sites, grouped by cluster. Fig. S6 in Supplementary Information
 - `fig_nn_fluxnet2015/boxplot_AI_by_cluster.pdf`: A boxplot for aridity index by cluster. Fig. S9 (left) in Supplementary Information.
 - `fig_nn_fluxnet2015/boxplot_alpha_by_cluster.pdf`: A boxplot for mean PET/AET index by cluster. Fig. S9 (right) in Supplementary Information.
-- `fig_nn_fluxnet2015/corr_fvar_vs_dfapar.pdf`: Correlation between fLUE$_0$ versus greenness change (1 - EVI/EVI$_0$). Fig. S8 in Supplementary Information. 
+- `fig_nn_fluxnet2015/corr_fvar_vs_dfapar.pdf`: Correlation between fLUE$_0$ versus greenness change (1 - EVI/EVI$_0$). Fig. S8 in Supplementary Information.
 - `fig_nn_fluxnet2015/cluster_map.pdf`: Sites on a global map, marked by cluster. Fig. S7 in Supplementary Information.
 
-This script also evaluates the correlation of water table depth site data from Fan & Miguez-Macho (2013) compared with De Graaf et al. (2015). 
+This script also evaluates the correlation of water table depth site data from Fan & Miguez-Macho (2013) compared with De Graaf et al. (2015).
 
+XXXX add descriptions here
 ```{r message=FALSE, warning=FALSE}
 source("plot_overview_nn_fluxnet2015.R")
 ```
 
+```{r message=FALSE, warning=FALSE}
+source("plot_map_greve.R")
+```
+
+```{r message=FALSE, warning=FALSE}
+source("evaluate_sensitivity_soilm_vpd.R")
+```
+
+```{r message=FALSE, warning=FALSE}
+source("plot_sites_climatespace.R")
+```

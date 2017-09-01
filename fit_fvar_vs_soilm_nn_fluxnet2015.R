@@ -126,12 +126,12 @@ for (sitename in do.sites){
     varnams_swc      <- nn_fluxnet[[ sitename ]]$varnams_swc    
     varnams_swc_obs  <- nn_fluxnet[[ sitename ]]$varnams_swc_obs
 
-    ## For SD-Dem, overwrite measured soil moisture - it's probably wrong as it does not fall below 0.25 or so
-    if (sitename == "SD-Dem"){
-      varnams_swc_mod <- varnams_swc[ !is.element( varnams_swc, varnams_swc_obs ) ]
-      nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_mod)), 1, FUN=mean, na.rm=TRUE )
-      nice$soilm_mean[ is.nan( nice$soilm_mean ) ] <- NA
-    }
+    # if (sitename == "SD-Dem" || sitename == "SN-Dhr"){
+    #   varnams_swc_mod <- varnams_swc[ -which( varnams_swc=="soilm_obs" ) ]
+    #   # nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_mod)), 1, FUN=mean, na.rm=TRUE )
+    #   nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_obs) ), 1, FUN=mean, na.rm=TRUE )
+    #   nice$soilm_mean[ is.nan( nice$soilm_mean ) ] <- NA
+    # }
 
     ## add row to aggregated data
     mysitename <- data.frame( mysitename=rep( sitename, nrow(nice) ) )
@@ -155,6 +155,18 @@ for (sitename in do.sites){
     nice <- nice %>% mutate( insinterval = cut( soilm_mean , breaks = sintervals ) ) %>% group_by( insinterval )
     tmp <- nice %>% dplyr::summarise( median=median( fvar, na.rm=TRUE ) ) %>% complete( insinterval, fill = list( median = NA ) ) %>% dplyr::select( median )
     yvals <- unlist(tmp)[1:nsintervals]
+
+    # ## Fit by all data
+    # gpp_stressfit <- try( 
+    #                       nlsLM( 
+    #                             fvar ~ stress_quad( soilm_mean, x0, off, apar ), 
+    #                             data=nice, 
+    #                             start=list( x0=1.0, off=0.0, apar=1.0 ),
+    #                             lower=c( 0.01, -1.0, 0.001 ),
+    #                             upper=c( 1.0,  1.0,  1000 ),
+    #                             algorithm="port"
+    #                             ) 
+    #                       )
 
     ## Fit by medians in bis
     df_tmp <- data.frame( xvals=xvals, yvals=yvals )
@@ -194,19 +206,6 @@ for (sitename in do.sites){
         # abline( v=coef(gpp_stressfit)[[ "xmax" ]], lty=3 )
         # mtext( bquote( "RMSE" == .(format( rmse_gpp_stressfit, digits=3 ) ) ), side=3, line=0, adj=1 )
       }
-
-    dev.off()
-
-
-    ##------------------------------------------------
-    ## Plot EVI vs. soil moisture
-    ##------------------------------------------------
-    pdf( paste( "fig_nn_fluxnet2015/evi_vs_soilm/evi_vs_soilm_mean_", sitename, ".pdf", sep="" ), width=6, height=5 )
-
-      par(las=1)
-      plot( nice$soilm_mean, nice$evi, xlim=c(0,1), ylim=c(0,1.2), pch=16, xlab="soil water content (fraction)", ylab="EVI", col=add_alpha("springgreen4", 0.2) )
-      bp <- boxplot( evi ~ insinterval, data=nice, main=sitename, col=NA, las=1, outline = FALSE, na.rm=TRUE, add=TRUE, at=(sintervals[1:nsintervals]+(1.0/(2*nsintervals))), boxwex=0.05, axes=FALSE )
-      abline( h=1.0, lwd=0.5 )
 
     dev.off()
 

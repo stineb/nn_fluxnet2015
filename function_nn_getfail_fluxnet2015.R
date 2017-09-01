@@ -1,12 +1,15 @@
-nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, testprofile=FALSE, makepdf=TRUE, verbose=FALSE ){
+nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, testprofile=FALSE, makepdf=TRUE, verbose=FALSE ){
 
   # ## XXX debug----------------
-  # sitename   = "FR-Pue"
+  # sitename   = "AU-Dry"
   # nam_target = "lue_obs_evi"
   # use_weights= FALSE    
   # use_fapar  = FALSE
   # recalc     = TRUE
-  # testprofile= TRUE
+  # testprofile= FALSE
+  # code       = 1
+  # makepdf    = FALSE
+  # verbose    = TRUE
   # ##--------------------------
 
   require(dplyr)
@@ -49,7 +52,6 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     char_wgt <- ""
   }
 
-  ## Get NN fvar data
   filn  <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
   if (testprofile){
     dir <- paste( workingdir, "/data/", sep="" )
@@ -67,7 +69,9 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     avl <- FALSE
   }
 
-  if (avl){
+  if (is.na(code)) code <- 9999
+
+  if ( avl && code !=0 ){
 
     ##------------------------------------------------
     ## "detatch"
@@ -137,13 +141,13 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
                                         )
         # if ( out_NNallbad$prmse > 70 || out_NNallbad$rsq < 0.3 ) failed <- TRUE
       } else {
-        out_NNallbad <- list( prmse=NA, rsq=NA, ptoohi=NA, pbias=NA )
+        out_NNallbad <- list( prmse=NA, rmse=NA, rsq=NA, ptoohi=NA, pbias=NA )
       }
 
       ## * RMSE of NNgood vs. NNall during good days
       out_NNNN <- analyse_modobs( 
-                                  nondrgtdays$var_nn_act, 
-                                  nondrgtdays$var_nn_pot, 
+                                  nondrgtdays$var_nn_act * nondrgtdays$ppfd * nondrgtdays$evi, 
+                                  nondrgtdays$var_nn_pot * nondrgtdays$ppfd * nondrgtdays$evi, 
                                   do.plot=TRUE, 
                                   plot.title=paste( "NN pot vs NN act, good days", sitename ), 
                                   nrcol=1, 
@@ -170,6 +174,8 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     ##------------------------------------------------
     failed <- FALSE
 
+    ndays <- nice %>% dplyr::filter( !is.na(fvar) ) %>% nrow()
+
     droughtdays <- nice %>% dplyr::filter(  is_drought_byvar_recalc )
     nondrgtdays <- nice %>% dplyr::filter( !is_drought_byvar_recalc )
 
@@ -179,10 +185,10 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     }
 
     ## * R2 of NNall
-    if ( stats$out_NNall$prmse > 60 || stats$out_NNall$rsq < 0.3 ) failed <- TRUE
+    if ( stats$out_NNall$rmse > 2.8 || stats$out_NNall$rsq < 0.5 ) failed <- TRUE
 
     ## * R2 of NNgood vs. observed during good days
-    if ( stats$out_NNgood$prmse > 60 || stats$out_NNgood$rsq < 0.3 ) failed <- TRUE
+    if ( stats$out_NNgood$prmse > 80 || stats$out_NNgood$rsq < 0.3 ) failed <- TRUE
 
     ## * R2 of NNall during bad days has no big bias
     if ( nrow(droughtdays)>0.02*nrow(nondrgtdays) ){
@@ -191,13 +197,34 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     }
 
     ## * RMSE of NNgood vs. NNall during good days
-    if ( stats$out_NNNN$rsq > 50  ) failed <- TRUE
+    if ( stats$out_NNNN$rsq < 0.5 || stats$out_NNNN$rmse > 1.6 ) failed <- TRUE
 
+    # ## delete panel file
+    # dir <- paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/fig_nn_fluxnet2015/panel_potentialgpp/", sep="")
+    # filn <- paste( "panel_crude_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="" )
+    # path <- paste( dir, filn, sep="" )
+    # if (file.exists( path )) {
+    #   system( paste( "rm", path ) )
+    # } else {
+    #   path <- paste( dir, "failed/", filn, sep="" )
+    #   system( paste( "rm", path ) )
+    # }
+
+    # ## move NN fvar data file if it's re-classified now
+    # dir <- paste( myhome, "data/nn_fluxnet/fvar/", sep="")
+    # filn <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+    # path <- paste( dir, filn, sep="" )
+    # if ( file.exists( path ) && failed ) {
+    #   system( paste( "mv", path, paste( dir, "failed/" ) ) )
+    # } else if ( !file.exists( path ) && !failed ){
+    #   system( paste( "mv", paste( dir, "failed/", filn, sep="" ), dir ) )
+    # }
+    
 
     ##------------------------------------------------
     ## Return code for success
     ##------------------------------------------------
-    if (failed){
+    if (failed || ndays < 500){
       successcode <- 3
     } else if ( sum(droughts$len) < 0.02 * nrow(nice) ){
       successcode <- 2
@@ -207,23 +234,28 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
 
     out <- data.frame(
                       mysitename=sitename, successcode=successcode,
+                      ndays=ndays,
 
                       NNallbad_prmse=stats$out_NNallbad$prmse,
+                      NNallbad_rmse=stats$out_NNallbad$rmse,
                       NNallbad_rsq=stats$out_NNallbad$rsq,
                       NNallbad_ptoohi=stats$out_NNallbad$ptoohi,
                       NNallbad_pbias=stats$out_NNallbad$pbias,
 
                       NNgood_prmse=stats$out_NNgood$prmse,
+                      NNgood_rmse=stats$out_NNgood$rmse,
                       NNgood_rsq=stats$out_NNgood$rsq,
                       NNgood_ptoohi=stats$out_NNgood$ptoohi,
                       NNgood_pbias=stats$out_NNgood$pbias,
 
                       NNall_prmse=stats$out_NNall$prmse,
+                      NNall_rmse=stats$out_NNall$rmse,
                       NNall_rsq=stats$out_NNall$rsq,
                       NNall_ptoohi=stats$out_NNall$ptoohi,
                       NNall_pbias=stats$out_NNall$pbias,
 
                       NNNN_prmse=stats$out_NNNN$prmse,
+                      NNNN_rmse=stats$out_NNNN$rmse,
                       NNNN_rsq=stats$out_NNNN$rsq,
                       NNNN_ptoohi=stats$out_NNNN$ptoohi,
                       NNNN_pbias=stats$out_NNNN$pbias
@@ -240,7 +272,7 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     ## plot time series with identified droughts
     ##------------------------------------------------
     plot_panel_nn( 
-                  sitename, nice, out_nn_all$nn,
+                  sitename, nice, out_nn_act$nn,
                   minmax         = minmax,
                   dolek          = FALSE, 
                   filename       = panelfiln,
@@ -257,23 +289,28 @@ nn_getfail_fluxnet <- function( sitename, recalc=TRUE, nam_target="lue_obs_evi",
     out <- data.frame(
                       mysitename=sitename, 
                       successcode=0,
+                      ndays=NA,
 
                       NNallbad_prmse=NA,
+                      NNallbad_rmse=NA,
                       NNallbad_rsq=NA,
                       NNallbad_ptoohi=NA,
                       NNallbad_pbias=NA,
 
                       NNgood_prmse=NA,
+                      NNgood_rmse=NA,
                       NNgood_rsq=NA,
                       NNgood_ptoohi=NA,
                       NNgood_pbias=NA,
 
                       NNall_prmse=NA,
+                      NNall_rmse=NA,
                       NNall_rsq=NA,
                       NNall_ptoohi=NA,
                       NNall_pbias=NA,
 
                       NNNN_prmse=NA,
+                      NNNN_rmse=NA,
                       NNNN_rsq=NA,
                       NNNN_ptoohi=NA,
                       NNNN_pbias=NA
