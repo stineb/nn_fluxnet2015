@@ -30,78 +30,11 @@ siteinfo <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
 load( "data/overview_data_fluxnet2015_L2.Rdata" )
 
 
-## XXX override
-avl_data_mte <- FALSE
-
-##------------------------------------------------
-## Check availability of MODIS GPP data
-##------------------------------------------------
-fillist <- list.files( myhome, "data/modis_gpp_fluxnet_cutouts_tseries/" )
-if (length(fillist)==0) {
-  avl_data_modis <- FALSE
-} else {
-  avl_data_modis <- TRUE
-}
-
-##------------------------------------------------
-## Get PRI and CCI for all sites
-##------------------------------------------------
-filn <- paste( myhome, "data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata", sep="" )
-
-if ( file.exists(filn) ){
-
-  avl_data_pri <- TRUE
-  load( filn )  # loads a dataframe called 'data'
-  df_pri <- data  # rename the variable to df_pri
-  rm( data )
-  df_pri <- df_pri %>%  rename( year=year.modis, moy=month.modis, dom=day.modis, doy_df_pri=julday.modis ) 
-
-  ## Mistake in Marcos' calculation of PRI (before using bands 11 and 3, but it should be calculated using bands 11 and 4)
-  ## CCI is calculated as cci = ( BRF_B11 - BRF_B1 ) / ( BRF_B11 + BRF_B1 )
-  df_pri <- df_pri %>% mutate( pri = ( BRF_B11 - BRF_B4 ) / ( BRF_B11 + BRF_B4 ) ) # iolanda: 13 instead of 4???
-
-  ## aggregate to daily mean values
-  ddf_pri <- df_pri %>% mutate( 
-                                year       = as.integer( as.character( year       )), 
-                                moy        = as.integer( as.character( moy        )), 
-                                dom        = as.integer( as.character( dom        )), 
-                                doy_df_pri = as.integer( as.character( doy_df_pri )),  
-                                localh     = as.numeric( as.character( localh     ))
-                                ) %>%
-                        group_by( site, year, moy, dom ) %>%
-                        summarise( 
-                                    ndvi       = mean( ndvi,    na.rm=TRUE ),
-                                    evi_df_pri = mean( evi ,    na.rm=TRUE ),
-                                    cci        = mean( cci ,    na.rm=TRUE ),
-                                    pri        = mean( pri ,    na.rm=TRUE ),
-                                    ndsi       = mean( ndsi,    na.rm=TRUE ),
-                                    wateri     = mean( wateri , na.rm=TRUE )
-                                  ) %>%
-                        mutate( 
-                                cci = remove_outliers( cci, coef=3.0 ),
-                                pri = remove_outliers( pri, coef=3.0 )
-                              )
-
-  ## get list of sites for which we don't have any PRI data
-  sitelist_pri <- as.character( unique( ddf_pri$site ) )
-  sitelist_my  <- dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysitename
-  missing_pri  <- sitelist_my[ which( !is.element( sitelist_my, sitelist_pri ) ) ]
-
-} else {
-
-  avl_data_pri <- FALSE
-
-}
-
-
 ##------------------------------------------------
 ## Initialise aggregated data
 ##------------------------------------------------
 ## fvar and soilm data to be complemented with cluster info
 nice_agg          <- data.frame()
-nice_to_mte_agg   <- data.frame()
-nice_to_modis_agg <- data.frame()
-
 
 ## check and override if necessary
 if ( nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
@@ -143,8 +76,6 @@ print( "Aggregating and complementing data for all sites ..." )
 ##------------------------------------------------
 ## fvar and soilm data to be complemented with cluster info
 nice_agg          <- data.frame()
-nice_to_mte_agg   <- data.frame()
-nice_to_modis_agg <- data.frame()
 nice_resh         <- data.frame()
 
 ## all possible soil moisture datasets
@@ -167,33 +98,12 @@ for (sitename in do.sites){
     varnams_swc      <- nn_fluxnet[[ sitename ]]$varnams_swc    
     varnams_swc_obs  <- nn_fluxnet[[ sitename ]]$varnams_swc_obs
 
-    ## remove columns again if they had bee added already before
-    if (avl_data_pri){
-      if ( is.element( "pri", names( nice ) ) ) nice$pri <- NULL
-      if ( is.element( "cci", names( nice ) ) ) nice$cci <- NULL
-      if ( is.element( "spri", names( nice ) ) ) nice$spri <- NULL
-      if ( is.element( "scci", names( nice ) ) ) nice$scci <- NULL
-      if ( is.element( "pri_norm", names( nice ) ) ) nice$pri_norm <- NULL
-      if ( is.element( "cci_norm", names( nice ) ) ) nice$cci_norm <- NULL
-      if ( is.element( "ndvi", names( nice ) ) ) nice$ndvi <- NULL
-      if ( is.element( "ndsi", names( nice ) ) ) nice$ndsi <- NULL
-      if ( is.element( "wateri", names( nice ) ) ) nice$wateri <- NULL
-      if ( is.element( "evi_df_pri", names( nice ) ) ) nice$evi_df_pri <- NULL
-      if ( is.element( "site", names( nice ) ) ) nice$site <- NULL
-    }
-
     ## For SD-Dem, overwrite measured soil moisture - it's probably wrong as it does not fall below 0.25 or so
     if (sitename == "SD-Dem"){
       varnams_swc_mod <- varnams_swc[ !is.element( varnams_swc, varnams_swc_obs ) ]
       nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_mod)), 1, FUN=mean, na.rm=TRUE )
       nice$soilm_mean[ is.nan( nice$soilm_mean ) ] <- NA
     }
-
-    nice$bias_pmodel  <-  nice$gpp_pmodel / nice$gpp_obs
-    nice$bias_pmodel[ which(is.infinite(nice$bias_pmodel)) ] <- NA
-
-    nice$ratio_obs_mod  <-  nice$gpp_obs / nice$gpp_pmodel
-    nice$ratio_obs_mod[ which(is.infinite(nice$ratio_obs_mod)) ] <- NA
 
     ## Add information of EVI extremes and moving average fvar (preceeding 365 days)
     out_evianomalies <- nn_fluxnet[[ sitename ]]$out_evianomalies; fapar_extremes <- out_evianomalies$extremes
@@ -277,7 +187,7 @@ for (sitename in do.sites){
                 "spi1",
                 "spi3",
                 "spei1",
-                "spei3",
+                "spei3"
                 )
 
   # nice_agg <- dplyr::select( nice, one_of( usecols ) ) %>% cbind( mysitename, . ) %>% rbind( . )
@@ -285,33 +195,33 @@ for (sitename in do.sites){
   sub <- dplyr::select( nice, one_of( usecols ) )
   nice_agg <- rbind( nice_agg, cbind(  mysitename, sub ) )
 
-  # ##------------------------------------------------
-  # ## Reshape dataframe to stack data from different soil moisture datasets along rows
-  # ##------------------------------------------------
-  # for (isoilm in varnams_swc_full){
-  #   if (isoilm=="soilm_obs") nice$soilm_obs <- nice$soilm_obs_mean
-  #   if (is.null(nice[[ isoilm ]])){
-  #     nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-  #     nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-  #     nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-  #     nice[[ paste( "moist_",      isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-  #     nice[[ isoilm ]]                                 <- rep( NA, nrow(nice) )
-  #   }
-  #   addrows <- data.frame( 
-  #                           mysitename = sitename,
-  #                           year_dec   = nice$year_dec,
-  #                           var_nn_act = nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]],
-  #                           var_nn_pot = nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]],
-  #                           var_nn_vpd = nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]],
-  #                           moist      = nice[[ paste( "moist_",      isoilm, sep="" ) ]],
-  #                           lue_obs_evi= nice$lue_obs_evi,
-  #                           soilm      = nice[[ isoilm ]],
-  #                           vpd        = nice$vpd,
-  #                           iabs       = nice$evi * nice$ppfd,
-  #                           soilm_data = rep( isoilm, nrow(nice) )
-  #                           )
-  #   nice_resh <- rbind( nice_resh, addrows )
-  # }
+  ##------------------------------------------------
+  ## Reshape dataframe to stack data from different soil moisture datasets along rows
+  ##------------------------------------------------
+  for (isoilm in varnams_swc_full){
+    if (isoilm=="soilm_obs") nice$soilm_obs <- nice$soilm_obs_mean
+    if (is.null(nice[[ isoilm ]])){
+      nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+      nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+      nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+      nice[[ paste( "moist_",      isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+      nice[[ isoilm ]]                                 <- rep( NA, nrow(nice) )
+    }
+    addrows <- data.frame( 
+                            mysitename = sitename,
+                            year_dec   = nice$year_dec,
+                            var_nn_act = nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]],
+                            var_nn_pot = nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]],
+                            var_nn_vpd = nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]],
+                            moist      = nice[[ paste( "moist_",      isoilm, sep="" ) ]],
+                            lue_obs_evi= nice$lue_obs_evi,
+                            soilm      = nice[[ isoilm ]],
+                            vpd        = nice$vpd,
+                            iabs       = nice$evi * nice$ppfd,
+                            soilm_data = rep( isoilm, nrow(nice) )
+                            )
+    nice_resh <- rbind( nice_resh, addrows )
+  }
 
 
 }
@@ -323,12 +233,6 @@ if ( length( dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysi
   ## save collected data
   ##------------------------------------------------
   save( nice_agg, file=paste( "data/nice_agg_", nam_target, char_fapar, ".Rdata", sep="") )
-
-  if (avl_data_mte)   save( nice_to_mte_agg,   file=paste("data/nice_mte_agg_",   nam_target, char_fapar, ".Rdata", sep="") )
-  if (avl_data_modis) save( nice_to_modis_agg, file=paste("data/nice_modis_agg_", nam_target, char_fapar, ".Rdata", sep="") )
-
-  if (avl_data_pri) save( missing_pri, file=paste("data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
-
   save( overview, file="data/overview_data_fluxnet2015_L3.Rdata" )
 
 } else {
