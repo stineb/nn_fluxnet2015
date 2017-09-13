@@ -48,11 +48,11 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
   ##------------------------------------------------
   ## load data
   ##------------------------------------------------
-  load( paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" )  ) ## gets list 'nn_fluxnet'
+  load( paste( "./data/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" )  ) ## gets list 'nn_fluxnet'
   df       <- as.data.frame( nn_fluxnet[[ sitename ]]$nice ) %>% dplyr::select( year_dec, match( fapar_data, names(.) ), fvar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs, gpp_obs_gfd, iwue )
   droughts <- nn_fluxnet[[ sitename ]]$droughts        
 
-  filn <- paste( "data/aligned_", sitename, ".Rdata", sep="" ) # loads df_dday, data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
+  filn <- paste( "./data/aligned_", sitename, ".Rdata", sep="" ) # loads df_dday, data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
 
   if (file.exists(filn)){
 
@@ -119,7 +119,7 @@ get_aggresponse_binned <- function( sitename, nam_target="lue_obs_evi", use_fapa
     ##------------------------------------------------
     ## boxplot fvar vs. days (binned)
     ##------------------------------------------------
-    filn <- paste( "fig_nn_fluxnet2015/aligned_binned/aligned_binned_", sitename, "_", nam_target, char_fapar, ".pdf", sep="")
+    filn <- paste( "./fig_nn_fluxnet2015/aligned_binned/aligned_binned_", sitename, "_", nam_target, char_fapar, ".pdf", sep="")
     if (makepdf) pdf( filn, width=8, height=6 )
     par(las=1)
     fvar_median <- df_dday %>% group_by( dday ) %>% summarise( fvar = median( fvar , na.rm=TRUE ) )

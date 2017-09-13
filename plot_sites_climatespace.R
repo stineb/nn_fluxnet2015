@@ -2,7 +2,6 @@ library(gplots)
 library(graphics)
 library(dplyr)
 
-source( paste( "get_daily_modelout.R", sep="" ) )
 source( paste( "analyse_modobs.R", sep="" ) )
 source( paste( "get_spi_spei.R", sep="" ) )
 
@@ -36,7 +35,9 @@ growtype <- list( herb=c("GRA", "CRO"), sav=c("SAV", "WSA"), shrub=c("OSH", "CSH
   heights <- c(1,1)*magn
   widths <- c(1.2,1.2)*magn
 
-  pdf( "fig_nn_fluxnet2015/sites_climatespace.pdf", width=sum(widths), height=sum(heights) )
+  plotfiln <- "fig_nn_fluxnet2015/sites_climatespace.pdf"
+  print(paste("plotting", plotfiln))
+  pdf( plotfiln, width=sum(widths), height=sum(heights) )
     
     par( las=1, mar=c(4,4,1,1) )      
     panel <- layout(

@@ -25,7 +25,6 @@ BE-Bra
 BE-Lon
 BE-Vie
 BR-Sa3
-CA-Qfo
 CH-Cha
 CH-Dav
 CH-Fru
@@ -36,7 +35,6 @@ CN-Cng
 CN-Dan
 CN-Din
 CN-Du2
-CN-HaM
 CN-Qia
 CZ-BK1
 CZ-BK2

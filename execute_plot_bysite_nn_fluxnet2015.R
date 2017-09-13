@@ -1,4 +1,4 @@
-source( paste( "plot_bysite_nn_fluxnet2015.R", sep="" ) )
+source( "plot_bysite_nn_fluxnet2015.R" )
 
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')

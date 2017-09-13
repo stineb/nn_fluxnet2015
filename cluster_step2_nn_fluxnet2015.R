@@ -71,7 +71,6 @@ for (sitename in do.sites$mysitename){
 
   if (!is.null(out$fapar       ))  fapar_agg        <- rbind( fapar_agg,        out$fapar    )
   if (!is.null(out$fvar        ))  fvar_agg         <- rbind( fvar_agg,         out$fvar     )
-  if (!is.null(out$df_dday     ))  df_dday_agg_NEW  <- rbind( df_dday_agg_NEW,  out$df_dday  )
   if (!is.null(out$sitename    ))  sitename_agg     <- rbind( sitename_agg,     out$sitename )
   if (!is.null(out$fapar0      ))  fapar0_agg       <- rbind( fapar0_agg,       out$fapar0   )
   # if (!is.na(out$iwue    ))  iwue_agg     <- rbind( iwue_agg,     out$iwue    )

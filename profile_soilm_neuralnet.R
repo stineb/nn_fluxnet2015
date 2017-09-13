@@ -1,18 +1,18 @@
-# profile_soilm_neuralnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, outdir="./data/", varnams_swc=NA, soilm_threshold=NA, packages="nnet", overwrite_profile=TRUE, nrep=1, makepdf=TRUE ){
+profile_soilm_neuralnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, outdir="./data/", varnams_swc=NA, soilm_threshold=NA, packages="nnet", overwrite_profile=TRUE, nrep=1, makepdf=TRUE ){
 
-  ## XXX debug----------------
-  sitename          = "FR-Pue"
-  nam_target        = "lue_obs_evi"
-  outdir            = "./data/profile/"
-  soilm_threshold   = seq( 0.45, 0.55, 0.05 )
-  varnams_swc       = c("soilm_swbm")
-  packages          = "nnet"
-  nrep              = 2
-  overwrite_profile = TRUE  
-  use_fapar         = FALSE
-  makepdf           = FALSE
-  use_weights       = FALSE
-  ##--------------------------
+  # ## XXX debug----------------
+  # sitename          = "FR-Pue"
+  # nam_target        = "lue_obs_evi"
+  # outdir            = "./data/profile/"
+  # soilm_threshold   = seq( 0.45, 0.55, 0.05 )
+  # varnams_swc       = c("soilm_swbm")
+  # packages          = "nnet"
+  # nrep              = 2
+  # overwrite_profile = TRUE  
+  # use_fapar         = FALSE
+  # makepdf           = FALSE
+  # use_weights       = FALSE
+  # ##--------------------------
 
   ## default is sampling full range
   if (is.na(soilm_threshold)){
@@ -817,6 +817,6 @@
   save( profile_nn, file=outfilnam )
   save( profile_nn_light, file=outfilnam_light )
 
-# }
+}
 
 

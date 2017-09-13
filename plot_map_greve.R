@@ -16,9 +16,6 @@ load( "data/alpha_fluxnet2015.Rdata" )  # loads 'df_alpha'
 overview <- overview %>% left_join( df_ai,          by="mysitename" )
 overview <- overview %>% left_join( df_alpha,       by="mysitename" )
 
-nc <- nc_open( "./data/greve/ep_over_p_cru_ncep.nc", sep="") )
-epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
-
   magn <- 4
   ncols <- 3
   nrows <- 2
@@ -34,12 +31,22 @@ epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
   lon.labels <- seq(-180, 180, 60)
   lon.short  <- seq(-180, 180, 10)
 
+  ncfiln <- "./data/greve/ep_over_p_cru_ncep.nc"
+  if (!file.exists(ncfiln)) {
+    epop <- array( 1, dim=c(720,360) )
+  } else {
+    nc <- nc_open( ncfiln )
+    epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
+  }
+
   a <- sapply( lat.labels, function(x) bquote(.(x)*degree ~ N) )
   b <- sapply( lon.labels, function(x) bquote(.(x)*degree ~ E) )
 
   savepar_fig <- par()$fig
 
-  pdf( "./fig_nn_fluxnet2015/map_greve.pdf", width=sum(widths), height=sum(heights) )
+  plotfiln <- "./fig_nn_fluxnet2015/map_greve.pdf"
+  print(paste("plotting", plotfiln))
+  pdf( plotfiln, width=sum(widths), height=sum(heights) )
 
     panel <- layout(
               order,
@@ -132,4 +139,6 @@ epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
     box()
    
   dev.off()
+
+
  

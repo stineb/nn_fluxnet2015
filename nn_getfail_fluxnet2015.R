@@ -11,7 +11,7 @@ print( "getting failure info for all sites ..." )
 successcodes <- data.frame()
 for (idx in 1:nrow(siteinfo)){
   sitename <- siteinfo$mysitename[idx]
-  add <- nn_getfail_fluxnet( sitename, code=siteinfo$code[idx], nam_target=nam_target, use_weights=use_weights, use_fapar=use_fapar )
+  add <- nn_getfail_fluxnet( sitename, code=siteinfo$code[idx], nam_target=nam_target, use_weights=use_weights, use_fapar=use_fapar, testprofile=TRUE )
   successcodes <- rbind( successcodes, add )
 }
 print( "... done" )
@@ -27,7 +27,7 @@ print( paste( "number of sites with code 2:", sum(successcodes$successcode==2) )
 print( paste( "number of sites with code 3:", sum(successcodes$successcode==3) ) )
 print( paste( "number of sites with code 0:", sum(successcodes$successcode==0) ) )
 
-write.csv( successcodes, file=paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/successcodes.csv", sep="" ), row.names=FALSE )
+write.csv( successcodes, file="successcodes.csv", row.names=FALSE )
 
 
 

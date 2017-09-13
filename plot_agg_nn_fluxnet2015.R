@@ -1,7 +1,7 @@
 library(dplyr)
 
-source( paste( workingdir, "/analyse_modobs.R", sep="" ) )
-source( paste( workingdir, "/remove_outliers.R", sep="" ) )
+source( "analyse_modobs.R" )
+source( "remove_outliers.R" )
 
 ## Manual settings ----------------
 nam_target = "lue_obs_evi"
@@ -47,27 +47,11 @@ if (use_weights){
   char_wgt <- ""
 }
 
-load( paste("data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
-siteinfo <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/siteinfo_fluxnet2015_sofun.csv", sep="") )
+siteinfo <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
 
 ## Load aggregated data from all sites, created by plot_nn_fVAR_fluxnet2015.R: 
 load( paste( "data/nice_agg_", char_wgt, nam_target, ".Rdata", sep="" ) )       # loads 'nice_agg'
-
-filn <- paste( "data/nice_modis_agg_", char_wgt, nam_target, ".Rdata", sep="" )
-if (file.exists(filn)){
-  avl_modis <- TRUE
-  load( filn ) # loads 'nice_to_modis_agg'
-} else {
-  avl_modis <- FALSE
-}
-
-filn <- paste( "data/nice_mte_agg_", char_wgt, nam_target, ".Rdata", sep="" )
-if (file.exists(filn)){
-  avl_mte <- TRUE
-  load( filn ) # loads 'nice_to_mte_agg'
-} else {
-  avl_mte <- FALSE
-}
+load( "data/overview_data_fluxnet2015_L5.Rdata" )  # loads 'overview', written by cluster_fvar_vs_soilm.R or cluster_aligned_fluxnet2015.R
 
 ## Load aligned aggregated data
 load( "data/data_aligned_agg.Rdata" ) # loads 'df_dday_agg', 'df_dday_modis_agg', 'df_dday_mte_agg', 
@@ -75,37 +59,19 @@ load( "data/data_aligned_agg.Rdata" ) # loads 'df_dday_agg', 'df_dday_modis_agg'
 ## add vegetation type info to nice_agg
 nice_agg <- nice_agg %>% left_join( dplyr::select( siteinfo, mysitename, classid ), by="mysitename" )
 
-
-##--------------------------------------
-## ALPHA by fLUE drought
-##--------------------------------------
-pdf( paste( "fig_nn_fluxnet2015/boxplot_fluedrought_vs_alpha.pdf", sep=""), width=6, height=4 )
-
-  par( las=1 )
-
-  nice_agg <- nice_agg %>% mutate( alpha=aet_pmodel/pet_pmodel )
-
-  ## alpha
-  var1 <- unique( dplyr::filter( nice_agg, is_drought_byvar  & finalcluster %in% c(1,2) & !is.na(alpha) & !is.infinite(alpha) )$alpha )
-  var2 <- unique( dplyr::filter( nice_agg, !is_drought_byvar & finalcluster %in% c(1,2) & !is.na(alpha) & !is.infinite(alpha)  )$alpha )
-  ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
-  wtest <- wilcox.test( var1, var2, na.action=na.omit )
-  nsites <- dplyr::filter( nice_agg, !is.na(alpha) & !is.infinite(alpha) ) %>% dplyr::select( mysitename ) %>% unique() %>% nrow()
-  ndays  <- dplyr::filter( nice_agg, !is.na(alpha) & !is.infinite(alpha) ) %>% nrow()
-
-  with( dplyr::filter( nice_agg, finalcluster %in% c(1,2) ), boxplot( alpha ~ is_drought_byvar, outline=FALSE, xlab="fLUE drought", ylab="AET/PET", col="grey70" ) )
-  mtext( paste( "p =", format( ttest$p.value, digits=2 ) ), adj=1, cex=0.8 )
-  mtext( paste( "N =", as.character( ndays ) ), adj=1, line=1, cex=0.8 )
-  mtext( paste( "sites =", as.character( nsites ) ), adj=1, line=2, cex=0.8 )
-
-dev.off()
+## Add cluster information to nice_agg
+nice_agg <- nice_agg %>% left_join( dplyr::select( overview, mysitename, alignedcluster, quadfitcluster, finalcluster ) )
 
 
 ##--------------------------------------
 ## SPEI by fLUE drought
 ##--------------------------------------
-pdf( paste( "fig_nn_fluxnet2015/boxplot_fluedrought_vs_alpha_spi_spei_1mo.pdf", sep=""), width=6, height=4, bg="white" )
+nice_agg <- nice_agg %>% mutate( alpha=aet_pmodel/pet_pmodel )
 
+plotfiln <- paste( "fig_nn_fluxnet2015/boxplot_fluedrought_vs_alpha_spi_spei_1mo.pdf", sep="")
+pdf( plotfiln, width=6, height=4, bg="white" )
+
+  print( paste( "plotting", plotfiln ) )
   par( las=1, mfrow=c(1,3) )
 
   ## spi 1
@@ -155,68 +121,24 @@ pdf( paste( "fig_nn_fluxnet2015/boxplot_fluedrought_vs_alpha_spi_spei_1mo.pdf", 
 dev.off()
 
 
-pdf( paste( "fig_nn_fluxnet2015/boxplot_fluedrought_vs_spi_spei_3mo.pdf", sep=""), width=6, height=4 )
+# ##--------------------------------------
+# ## fLUE (rolling mean) by EVI extreme
+# ##--------------------------------------
+#   var1 <- dplyr::filter( nice_agg, is_fapar_extreme  & finalcluster %in% c(1,2,3,4) )$fvar_rollmean
+#   var2 <- dplyr::filter( nice_agg, !is_fapar_extreme & finalcluster %in% c(1,2,3,4)  )$fvar_rollmean
+#   ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
 
-  par( las=1, mfrow=c(1,2) )
-
-  ## spei 1
-  var1 <- unique( dplyr::filter( nice_agg, is_drought_byvar  & !is.na(spei3) & !is.infinite(spei3) )$spei3 )
-  var2 <- unique( dplyr::filter( nice_agg, !is_drought_byvar & !is.na(spei3) & !is.infinite(spei3)  )$spei3 )
-  ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
-  wtest <- wilcox.test( var1, var2, na.action=na.omit )
-  nsites <- dplyr::filter( nice_agg, !is.na(spei3) & !is.infinite(spei3) ) %>% dplyr::select( mysitename ) %>% unique() %>% nrow()
-  ndays <- dplyr::filter( nice_agg, !is.na(spei3) & !is.infinite(spei3) ) %>% nrow()
-
-  with( dplyr::filter( nice_agg, !is.na(spei3) & !is.infinite(spei3) ), boxplot( spei3 ~ is_drought_byvar, xlab="fLUE drought", ylab="SPEI, 3 mo.", col="grey70", outline=FALSE) )
-  mtext( paste( "p =", format( ttest$p.value, digits=2 ) ), adj=1, cex=0.8 )
-  mtext( paste( "N =", as.character( ndays ) ), adj=1, line=1, cex=0.8 )
-  mtext( paste( "sites =", as.character( nsites ) ), adj=1, line=2, cex=0.8 )
-
-  ## spi 1
-  var1 <- unique( dplyr::filter( nice_agg, is_drought_byvar  & !is.na(spi3) & !is.infinite(spi3) )$spi3 )
-  var2 <- unique( dplyr::filter( nice_agg, !is_drought_byvar & !is.na(spi3) & !is.infinite(spi3)  )$spi3 )
-  ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
-  wtest <- wilcox.test( var1, var2, na.action=na.omit )
-  nsites <- dplyr::filter( nice_agg, !is.na(spi3) & !is.infinite(spi3) ) %>% dplyr::select( mysitename ) %>% unique() %>% nrow()
-  ndays <- dplyr::filter( nice_agg, !is.na(spi3) & !is.infinite(spi3) ) %>% nrow()
-
-  with( dplyr::filter( nice_agg, !is.na(spi3) & !is.infinite(spi3) ), boxplot( spi3 ~ is_drought_byvar, xlab="fLUE drought", ylab="SPI, 3 mo.", col="grey70", outline=FALSE) )
-  mtext( paste( "p =", format( ttest$p.value, digits=2 ) ), adj=1, cex=0.8 )
-  mtext( paste( "N =", as.character( ndays ) ), adj=1, line=1, cex=0.8 )
-  mtext( paste( "sites =", as.character( nsites ) ), adj=1, line=2, cex=0.8 )
-
-dev.off()
-
-# ## soil moisture anomaly
-# with( nice_agg, boxplot( soilm_mean_anom ~ is_drought_byvar, xlab="fLUE drought", ylab="soil moisture anomaly by DOY", outline=FALSE) )
-
-# var1 <- unique( dplyr::filter( nice_agg, is_drought_byvar  & !is.na(soilm_mean_anom) )$soilm_mean_anom )
-# var2 <- unique( dplyr::filter( nice_agg, !is_drought_byvar & !is.na(soilm_mean_anom)  )$soilm_mean_anom )
-
-# ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
-# wtest <- wilcox.test( var1, var2, na.action=na.omit )
-
-# with( nice_agg, heatscatter( fvar, spei3, pch=16, xlab="fLUE", ylab="SPEI, 3 mo."))
-
-
-##--------------------------------------
-## fLUE (rolling mean) by EVI extreme
-##--------------------------------------
-  var1 <- dplyr::filter( nice_agg, is_fapar_extreme  & finalcluster %in% c(1,2,3,4) )$fvar_rollmean
-  var2 <- dplyr::filter( nice_agg, !is_fapar_extreme & finalcluster %in% c(1,2,3,4)  )$fvar_rollmean
-  ttest <- t.test( var1, var2, paired=FALSE, na.action=na.omit )
-
-  pdf( paste( "fig_nn_fluxnet2015/boxplot_fvar_by_eviextreme.pdf", sep=""), width=4, height=4 )
-    par( las=1, mar=c(4,4,1,1) )
-    boxplot( 
-      fvar_rollmean ~ is_fapar_extreme, 
-      data=dplyr::filter( nice_agg, finalcluster %in% c(1,2,3,4)), 
-      ylim=c(0.75,1.2), 
-      col="grey70",
-      xlab="EVI extreme", ylab="fLUE (365 d moving average)"
-      )
-    # mtext( paste( "p =", format( ttest$p.value, digits=2 ) ), adj=1, cex=0.8 )
-  dev.off()
+#   pdf( paste( "fig_nn_fluxnet2015/boxplot_fvar_by_eviextreme.pdf", sep=""), width=4, height=4 )
+#     par( las=1, mar=c(4,4,1,1) )
+#     boxplot( 
+#       fvar_rollmean ~ is_fapar_extreme, 
+#       data=dplyr::filter( nice_agg, finalcluster %in% c(1,2,3,4)), 
+#       ylim=c(0.75,1.2), 
+#       col="grey70",
+#       xlab="EVI extreme", ylab="fLUE (365 d moving average)"
+#       )
+#     # mtext( paste( "p =", format( ttest$p.value, digits=2 ) ), adj=1, cex=0.8 )
+#   dev.off()
 
 ##--------------------------------------
 ## MOD VS OBS OF ALL DATA AGGREGATED
@@ -228,8 +150,9 @@ dev.off()
   ##--------------------------------------
 
     ## GPP
-    print("plotting mod vs obs for GPP in nice_agg ...")
-    pdf( paste( "fig_nn_fluxnet2015/modobs/modobs_gpp_rct_ALL_FROMNICE", char_wgt, ".pdf", sep=""), width=8, height=8 )
+    plotfiln <- paste( "fig_nn_fluxnet2015/modobs/modobs_gpp_rct_ALL_FROMNICE", char_wgt, ".pdf", sep="")
+    pdf( plotfiln, width=8, height=8 )
+      print( paste( "plotting mod vs obs for GPP in nice_agg:", plotfiln))
       par( mfrow=c(2,2) )
       stats_tmp <- analyse_modobs( 
                                   nice_agg$gpp_nn_act, 
@@ -274,8 +197,9 @@ dev.off()
     dev.off()
 
     ## LUE
-    print("plotting mod vs obs for LUE in nice_agg ...")
-    pdf( paste( "fig_nn_fluxnet2015/modobs/modobs_lue_rct_ALL_FROMNICE", char_wgt, ".pdf", sep=""), width=8, height=8 )
+    plotfiln <- paste( "fig_nn_fluxnet2015/modobs/modobs_lue_rct_ALL_FROMNICE", char_wgt, ".pdf", sep="") 
+    pdf( plotfiln, width=8, height=8 )
+      print( paste( "plotting mod vs obs for LUE in nice_agg:", plotfiln))
       par( mfrow=c(2,2) )
       stats_tmp <- analyse_modobs( 
                                   nice_agg$var_nn_act, 
@@ -443,14 +367,14 @@ dev.off()
 ##------------------------------------------------
 ## EVI vs. FPAR
 ##------------------------------------------------
-  pdf("fig_nn_fluxnet2015/fpar_vs_evi.pdf")
+plotfiln <- "fig_nn_fluxnet2015/fpar_vs_evi.pdf"
+print( paste( "plotting ", plotfiln ) )
+  pdf( plotfiln )
     par(las=1)
-    heatscatter( sub$gpp_obs, sub$evi, ylim=ylim, xlim=xlim, ylab="EVI", xlab=expression(paste("observed GPP (gC m"^{-2}, " d"^{-1}, ")")), main="" )
-    linmod <- lm( evi ~ gpp_obs, data=sub )
-    abline( linmod, col="red", lty=2 )
-    rsq <- summary( linmod )$adj.r.squared
-    numb <- sum(!is.na(sub$gpp_obs) & !is.na(sub$cci))
-    text( 20, 0.2, bquote( italic(R)^2 == .(format( rsq, digits = 2) ) ),  adj=0.0, cex=1.0 )
-    text( 20, 0.25, paste( "N =", format( numb, digits = 1 ) ), adj=0.0, cex=1.0 )
+    with( nice_agg,
+          heatscatter( evi, fpar, main="", xlab="EVI", ylab="FPAR", xlim=c(0,1), ylim=c(0,1) )
+          )
+    abline( c(0,0), c(1,1), col="red" )
     legend( "bottomright", legend=c("low density", "", "", "", "high density"), pch=16, col=colorRampPalette( c("gray80", "navy", "red", "yellow"))(5), bty="n",  cex=0.8 )
   dev.off()
+

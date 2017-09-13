@@ -1,4 +1,4 @@
-plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bysm=FALSE, use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
+plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bysm=FALSE, use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE ){
 
   # ## Debug ----------------
   # sitename   = "FR-Pue"
@@ -7,7 +7,6 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bys
   # use_fapar  = FALSE
   # makepdf    = TRUE
   # verbose    = TRUE
-  # testprofile= TRUE
   # ##--------------------------
 
   require(dplyr)
@@ -56,7 +55,7 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bys
   ## Load data
   ##------------------------------------------------
   if (verbose) print("loading nn_fVAR file ...")
-  if (testprofile) dir <- "data/" else dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
+  dir <- "./data/fvar/"
   infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_fapar, ".Rdata", sep="" ) 
   load( infil ) ## gets list 'nn_fluxnet'
   df <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )
@@ -75,21 +74,9 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bys
     droughts <- nn_fluxnet[[ sitename ]]$droughts
   }
 
-  load( paste( "data/missing_pri_", nam_target, char_fapar, ".Rdata", sep="") )
-  
   load( paste( "data/aligned_", sitename, char_bysm, ".Rdata", sep="" ) ) # loads data_alg_dry, names_alg, fvarbins, faparbins, iwuebins, before, after, bincentres_fvar, bincentres_fapar, bincentres_iwue
   load( paste( "data/df_dday_aggbydday_", sitename, char_bysm, ".Rdata", sep="" ) ) # loads 'df_dday_aggbydday'
   
-  if ( is.element( sitename, missing_pri ) )      avl_pri <- FALSE else avl_pri <- TRUE
-  if ( any(!is.na(df_dday_aggbydday$dscci_med)) ) avl_pri <- TRUE  else avl_pri <- FALSE
-
-  if ( is.element( "pri", names(df)) ){
-    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue, pri, cci, spri, scci )
-  } else {
-    df <- df %>% dplyr::select( year_dec, gpp_obs, var_nn_pot, var_nn_act, ppfd, fvar, soilm_mean, evi, fpar, wue_obs, is_drought_byvar, gpp_pmodel, gpp_obs_gfd, iwue )    
-    avl_pri <- FALSE
-  }
-
   filn <- paste( "data/aligned_modis_", sitename, ".Rdata", sep="" )
   if (file.exists(filn)) {
     error <- try( load( filn ) )   # loads data_alg_dry_modis, df_dday_modis, df_dday_aggbydday_modis, names_alg_modis, after_modis, before_modis
@@ -283,196 +270,6 @@ plot_aligned_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", bys
 
       legend( "left", c("fLUE", "EVI"), bty="n", lty=1, lwd=2, col=c("tomato", "springgreen4"), cex=1.0 )
 
-
-    # ##--------------------------------------------------------
-    # ## PRI and CCI
-    # ##--------------------------------------------------------
-    # if (avl_pri) {
-
-    #   if (verbose) print("plot 4/5")
-    #   par( las=1, mar=c(0,4,0,4), xpd=FALSE )
-    #   plot( c(-before,after), c(-0.2,1.5), ylim=range( c( df_dday_aggbydday$dscci_upp, df_dday_aggbydday$dscci_low ), na.rm=TRUE ), type="n", xlab="day after drought onset", ylab=expression( paste( "CCI / CCI"[0] ) ), axes=FALSE )
-    #   axis( 2 )
-    #   axis( 4 )
-    #   abline( h=1.0, col='grey40', lwd=0.5 )
-    #   # title( paste( sitename ) )
-
-    #   # ## boxplot for levels within bins
-    #   # bp1 <- boxplot( pri ~ inpribin, 
-    #   #                 data    = df_dday, 
-    #   #                 at      = bincentres_pri, 
-    #   #                 outline = FALSE, 
-    #   #                 na.rm   = TRUE, 
-    #   #                 add     = TRUE, 
-    #   #                 axes    = FALSE, 
-    #   #                 boxwex  = 5,
-    #   #                 border  = "grey50",
-    #   #                 lwd     = 0.5
-    #   #               )
-
-    #   # # GPP over drought aligned
-    #   # for ( idx in 1:nrow(droughts) ){
-    #   #   tmp <- data_alg_dry[,which( names_alg=="scci"),idx]
-    #   #   tmp <- approx( xvals, tmp, xout=xvals )$y
-    #   #   lines( xvals, tmp, col=add_alpha("goldenrod4", 0.4) )
-    #   # }
-
-    #   rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-
-    #   ## plot polygon for cci
-    #   upper <- approx( df_dday_aggbydday$dday, df_dday_aggbydday$dscci_upp, xout=xvals )$y
-    #   lower <- approx( df_dday_aggbydday$dday, df_dday_aggbydday$dscci_low, xout=xvals )$y
-    #   mid   <- df_dday_aggbydday$dscci_med
-    #   idxs  <- which( !is.na(upper) & !is.na(lower) )
-
-    #   polygon( c( xvals[idxs], rev(xvals[idxs])), c( lower[idxs], rev(upper[idxs])), col=add_alpha("cadetblue4", 0.4), border=NA )
-    #   lines( xvals, mid, col="cadetblue4" )
-
-    #   # ## plot polygon for pri
-    #   # upper <- approx( df_dday_aggbydday$dday, df_dday_aggbydday$dspri_upp, xout=xvals )$y
-    #   # lower <- approx( df_dday_aggbydday$dday, df_dday_aggbydday$dspri_low, xout=xvals )$y
-    #   # mid   <- df_dday_aggbydday$dspri_med
-    #   # idxs  <- which( !is.na(upper) & !is.na(lower) )
-
-    #   # polygon( c( xvals[idxs], rev(xvals[idxs])), c( lower[idxs], rev(upper[idxs])), col=add_alpha("cadetblue4", 0.4), border=NA )
-    #   # lines( xvals, mid, col="cadetblue4" )
-
-    #   # legend( "bottomleft", c("PRI", "CCI"), bty="n", lty=1, lwd=2, col=c('cadetblue4', "goldenrod4"), cex=1.0, inset=c(0,0.15) )
-    #   legend( "bottomleft", c("CCI"), bty="n", lty=1, lwd=2, col=c("cadetblue4"), cex=1.0, inset=c(0,0.15) )
-
-    # }
-
-
-    # # ##--------------------------------------------------------
-    # # ## IWUE
-    # # ##--------------------------------------------------------
-    # # if (verbose) print("plot 4/5")
-    # # ndaysavg <- 10
-    # # ref <- mean( data_alg_dry[ max( (before - ndaysavg), 0):before,which(names_alg=="iwue"),], na.rm=TRUE )
-    # # xvals <- (-before:after)+1
-
-    # # if (!is.nan(ref)){
-    # #   upper <- apply( data_alg_dry[,which(names_alg=="iwue"),] / ref, 1, function(x) quantile(x,0.75, na.rm=TRUE)   )
-    # #   upper <- approx( xvals, upper, xout=xvals )$y
-    # #   lower <- apply( data_alg_dry[,which(names_alg=="iwue"),] / ref, 1, function(x) quantile(x,0.25, na.rm=TRUE)   )
-    # #   lower <- approx( xvals, lower, xout=xvals )$y
-    # #   mid   <- apply( data_alg_dry[,which(names_alg=="iwue"),] / ref, 1, function(x) quantile(x,0.5, na.rm=TRUE)   )
-    # #   idxs  <- which( !is.na(upper) & !is.na(lower) )
-      
-    # #   ylim <- range( upper, lower, na.rm=TRUE )
-    # #   ylim[1] <- max( 0.0, ylim[1] )
-
-    # #   par( las=1, mar=c(0,4,0,4), xpd=FALSE )
-    # #   plot( (-before:after), (-before:after), type="n", xlab="day after drought", ylab=expression( paste( Delta, "IWUE*" ) ), ylim=ylim, axes=FALSE )
-    # #   if (verbose) print("y")
-    # #   axis( 2 )
-    # #   axis( 4 )
-    # #   # for ( idx in 1:nrow(droughts) ){
-    # #   #   lines( xvals, data_alg_dry[,which(names_alg=="wue_obs"),idx] / ref, col=rgb(0,0,0,0.2) , lwd=1 ) #col=rgb(0,1,0,0.6)
-    # #   # }
-    # #   rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-
-    # #   ## boxplot for levels within bins
-    # #   bp1 <- boxplot( iwue / ref ~ iniwuebin, 
-    # #                   data    = df_dday, 
-    # #                   at      = bincentres_iwue, 
-    # #                   outline = FALSE, 
-    # #                   na.rm   = TRUE, 
-    # #                   add     = TRUE, 
-    # #                   axes    = FALSE, 
-    # #                   boxwex  = 20,
-    # #                   border  = "grey50",
-    # #                   lwd     = 0.5
-    # #                 )
-
-    # #   ## plot polygon for WUE
-    # #   polygon( c( xvals[idxs], rev(xvals[idxs])), c( lower[idxs], rev(upper[idxs])), col=add_alpha('blue', 0.3), border=NA )
-    # #   lines( xvals, mid, col="blue", lwd=1 )
-
-    # #   # ## attach to aligned data frame
-    # #   # df_aligned_stat$iwue <- mid
-
-    # # } else {
-    # #   plot( xvals, xvals, type="n", xlab="day after drought", ylab=expression( paste( Delta, "IWUE*" ) ), ylim=c(0,1), axes=FALSE )
-    # #   axis( 2 )
-    # #   axis( 4 )
-    # #   rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-    # #   # df_aligned_stat$iwue <- rep(NA, nrow(df_aligned_stat))
-    # # }
-
-
-    # ##--------------------------------------------------------
-    # ## PLOT ARRANGED BIAS
-    # ##--------------------------------------------------------
-    # if (verbose) print("plot 5/5")
-
-    # upper <- log( df_dday_aggbydday$bias_pmodel_upp )
-    # lower <- log( df_dday_aggbydday$bias_pmodel_low )
-    # mid   <- log( df_dday_aggbydday$bias_pmodel_med )
-    # idxs  <- which( !is.na(upper) & !is.na(lower) )
-
-    # if (avl_modis){
-    #   upper_modis <- log( df_dday_aggbydday_modis$bias_modis_upp )
-    #   lower_modis <- log( df_dday_aggbydday_modis$bias_modis_low )
-    #   mid_modis   <- log( df_dday_aggbydday_modis$bias_modis_med )
-    #   idxs_modis  <- which( !is.na(upper_modis) & !is.na(lower_modis) )  
-    # }
-
-    # if (avl_mte){
-    #   upper_mte <- log( df_dday_aggbydday_mte$bias_mte_upp )
-    #   lower_mte <- log( df_dday_aggbydday_mte$bias_mte_low )
-    #   mid_mte   <- log( df_dday_aggbydday_mte$bias_mte_med )
-    #   idxs_mte  <- which( !is.na(upper_mte) & !is.na(lower_mte) )
-    # } else {
-    #   upper_mte <- NA
-    #   lower_mte <- NA
-    #   mid_mte   <- NA
-    # }
-
-    # ylim <- quantile( c( upper, lower, lower_mte, upper_mte ), probs=c(0.02,0.98), na.rm=TRUE )
-    # if (is.infinite(ylim[1])) ylim[1] <- -1
-    # # ylim <- c(-1,2)
-    # par( mar=c(4,4,0,4), xpd=FALSE )
-    # plot( c(-before,after), c(0,3), type="n", xlab="day after drought onset", ylab="log(model/observed)", axes=FALSE, ylim=ylim )
-    # axis( 2 )
-    # axis( 4 )
-    # axis( 1, xlab="days after drought onset" )
-
-    # ## MODIS BIAS
-    # if (avl_modis){
-    #   xvals <- ((-before_modis:after_modis)+1)*8
-    #   # for ( idx in 1:nrow(droughts_modis) ){
-    #     # frac <- data_alg_dry_modis[,which( names(nice_to_modis)=="bias_modis"),idx]
-    #     # lines( xvals, frac, col=rgb(0,0,0,0.2) )
-    #   # }
-    #   polygon( c( xvals[idxs_modis], rev(xvals[idxs_modis])), c( lower_modis[idxs_modis], rev(upper_modis[idxs_modis])), col=add_alpha("orchid", 0.4), border=NA )
-    #   lines( xvals[idxs_modis], mid_modis[idxs_modis], col="orchid" )
-    # }
-
-    # ## MTE BIAS
-    # if (avl_mte){
-    #   xvals <- ((-before_mte:after_mte)+1)*8
-    #   polygon( c( xvals[idxs_mte], rev(xvals[idxs_mte])), c( lower_mte[idxs_mte], rev(upper_mte[idxs_mte])), col=add_alpha("goldenrod3", 0.4), border=NA )
-    #   lines( xvals[idxs_mte], mid_mte[idxs_mte], col="goldenrod3" )
-    # }
-
-    # ## PMODEL BIAS
-    # xvals <- (-before:after)+1
-    # # for ( idx in 1:nrow(droughts) ){
-    #   # lines( xvals, data_alg_dry[,which(names_alg=="bias_pmodel"),idx], col=rgb(0,0,0,0.2) , lwd=1 ) #col=rgb(0,1,0,0.6)
-    # # }
-    # rect( 0, -99, droughts$len, 99, col=rgb(0,0,0,alpha), border=NA )
-
-    # polygon( c( xvals[idxs], rev(xvals[idxs])), c( (lower[idxs]), rev(upper[idxs])), col=add_alpha('royalblue3', 0.3), border=NA )
-    # lines( xvals[idxs], mid[idxs], col="royalblue3", lwd=1 )
-
-    # ## Legend
-    # if (avl_mte){
-    #   legend( "topleft", c("P-model", "MODIS", "FLUXCOM MTE"), bty="n", lty=1, lwd=2, col=c("royalblue3", "orchid", "goldenrod3"), cex=1.0 )
-    # } else {
-    #   legend( "topleft", c("P-model", "MODIS"), bty="n", lty=1, lwd=2, col=c("royalblue3", "orchid"), cex=1.0 )
-    # }
-    # abline( h=0.0, lwd=0.5  )
 
   if (makepdf) dev.off()
 

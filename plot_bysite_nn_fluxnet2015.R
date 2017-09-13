@@ -33,7 +33,9 @@ spline_with_gaps <- function( xvals, yvals, nice ){
 }
 
 
-plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE, testprofile=FALSE ){
+plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=TRUE, verbose=FALSE ){
+
+  source("get_consecutive.R")
 
   require( dplyr )
   require( tidyr )
@@ -81,12 +83,7 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
   panelfiln <- paste( "fig_nn_fluxnet2015/panel_potentialgpp/panel_potentialgpp_", sitename, "_", nam_target, char_wgt, char_fapar, ".pdf", sep="")   
 
   ## file name of input data file
-  if (testprofile){
-    dir <- paste( workingdir, "/data/", sep="" )
-  } else {
-    dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
-  }
-
+  dir <- "./data/fvar/"
   infil <- paste( dir, "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
 
   ## this is necessary to avoid plotting into an already existing panel
@@ -104,51 +101,6 @@ plot_bysite_nn_fluxnet2015 <- function( sitename, nam_target="lue_obs_evi", use_
     cutoff           <- nn_fluxnet[[ sitename ]]$cutoff
     varnams_swc      <- nn_fluxnet[[ sitename ]]$varnams_swc    
     varnams_swc_obs  <- nn_fluxnet[[ sitename ]]$varnams_swc_obs
-
-  # ##------------------------------------------------
-  # ## Get MODIS-FPAR for this site
-  # ##------------------------------------------------
-  # filn <- paste( "./data/fapar_modis_", sitename, ".Rdata", sep="" )
-  # modis_fpar <- try( read.csv( paste( myhome, "/sofun/input_fluxnet2015_sofun/sitedata/fapar/", sitename, "/dfapar_fpar_modissubset_", sitename, ".csv", sep="" ), as.is=TRUE ))
-  # if (class(modis_fpar)!="try-error" &&  sum(!is.na(modis_fpar$data))>2 ){
-  #   modis_fpar <- dplyr::rename( modis_fpar, fapar_modis=data )
-  #   modis_fpar$fapar_modis <- approx( modis_fpar$year_dec, modis_fpar$fapar_modis * 1e-1, xout=modis_fpar$year_dec )$y
-  #   missing_modis_fpar <- FALSE
-  # } else {
-  #   missing_modis_fpar <- TRUE
-  # }
-
-  #------------------------------------------------
-  # Plot VPD vs. soil moisture
-  #------------------------------------------------
-    magn <- 4
-    ncols <- 2
-    nrows <- 1
-    heights <- 1*magn
-    widths <- c(1.2, 0.8)*magn
-
-    if (makepdf) pdf( "fig_nn_fluxnet2015/vpd_vs_soilm/vpd_vs_soilm_", nam_target, char_fapar, "_", sitename, ".pdf", width=sum(widths), height=sum(heights) )      
-      par( las=1, mar=c(4,4,1,1) )      
-      panel <- layout(
-                      matrix(c(1:(nrows*ncols)),nrows,ncols,byrow=TRUE),
-                      # matrix( order, nrows, ncols, byrow=TRUE ),
-                      widths=widths,
-                      heights=heights,
-                      TRUE
-                      )
-      # layout.show( panel )
-
-      with( nice, heatscatter( 
-                            soilm_mean, 
-                            vpd*1e-3, 
-                            main="",
-                            ylab="VPD (kPa)",
-                            xlab="soil water content (fraction)"
-                            ) )
-
-      boxplot( vpd*1e-3 ~ moist_soilm_splash220, data=nice, outline=FALSE, col="grey70", xlab="moist", ylab="VPD (kPa)" )
-
-    if (makepdf) dev.off()
 
   ##------------------------------------------------
   ## PLOT MULTIPANEL

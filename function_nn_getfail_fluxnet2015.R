@@ -54,7 +54,7 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
 
   filn  <- paste( "nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
   if (testprofile){
-    dir <- paste( workingdir, "/data/", sep="" )
+    dir <- paste( "./data/fvar/", sep="" )
   } else {
     dir <- paste( myhome, "/data/nn_fluxnet/fvar/", sep="" )
   }

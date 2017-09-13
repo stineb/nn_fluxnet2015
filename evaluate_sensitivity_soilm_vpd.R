@@ -427,7 +427,9 @@ nrows <- 1
 heights <- c(1)*magn
 widths  <- c(1.2,1.2)*magn
 
-if (makepdf) pdf( "./fig_nn_fluxnet2015/vpd_soilmoisture_test.pdf", width=sum(widths), height=sum(heights) )
+plotfiln <- "./fig_nn_fluxnet2015/vpd_soilmoisture_test.pdf"
+if (makepdf) print(paste("plotting figure", plotfiln))
+if (makepdf) pdf( plotfiln, width=sum(widths), height=sum(heights) )
   
   panel <- layout(
                 matrix( c(1:(nrows*ncols)), nrows, ncols, byrow=TRUE ),

@@ -794,10 +794,12 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
           droughts <- out$instances
           nice$is_drought_byvar_recalc <- out$is_drought_byvar
 
-          ##------------------------------------------------
-          ## get EVI anomalies
-          ##------------------------------------------------
-          out_evianomalies <- get_evianomalies_bysite( sitename, quantile=0.03, do.plot=FALSE ) 
+          # ##------------------------------------------------
+          # ## get EVI anomalies
+          # ## XXX: DE-ACTIVATED FOR PUBLIC REPOSITORY. 
+          # ## USES ORIGINAL EVI DATA WHICH IS NOT DISTRIBUTED HERE.
+          # ##------------------------------------------------
+          # out_evianomalies <- get_evianomalies_bysite( sitename, quantile=0.03, do.plot=FALSE ) 
 
           ##------------------------------------------------
           ## Determine wether algorithm failed
@@ -893,7 +895,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
           nn_fluxnet[[ sitename ]]$nice             <- nice
           nn_fluxnet[[ sitename ]]$minmax           <- minmax
           nn_fluxnet[[ sitename ]]$droughts         <- droughts
-          nn_fluxnet[[ sitename ]]$out_evianomalies <- out_evianomalies
+          # nn_fluxnet[[ sitename ]]$out_evianomalies <- out_evianomalies
           nn_fluxnet[[ sitename ]]$cutoff           <- cutoff
           nn_fluxnet[[ sitename ]]$varnams_swc      <- varnams_swc
           nn_fluxnet[[ sitename ]]$varnams_swc_obs  <- varnams_swc_obs
@@ -905,7 +907,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
           nn_fluxnet[[ sitename ]]$nice             <- NA
           nn_fluxnet[[ sitename ]]$minmax           <- NA
           nn_fluxnet[[ sitename ]]$droughts         <- NA
-          nn_fluxnet[[ sitename ]]$out_evianomalies <- NA
+          # nn_fluxnet[[ sitename ]]$out_evianomalies <- NA
           nn_fluxnet[[ sitename ]]$cutoff           <- NA
           nn_fluxnet[[ sitename ]]$varnams_swc      <- NA
           nn_fluxnet[[ sitename ]]$varnams_swc_obs  <- NA

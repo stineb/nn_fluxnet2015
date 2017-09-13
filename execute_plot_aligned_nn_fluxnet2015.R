@@ -7,7 +7,7 @@ siteinfo <- read.csv( "successcodes.csv", as.is = TRUE )
 do.sites <- dplyr::filter( siteinfo, successcode==1 )$mysitename
 
 ## add classid column
-tmp <- read.csv( paste( myhome, "sofun/input_fluxnet2015_sofun/siteinfo_fluxnet2015_sofun.csv", sep="") )
+tmp <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
 siteinfo <- siteinfo %>% left_join( dplyr::select(tmp, mysitename, classid ), by="mysitename" )
 
 ## Manual settings ----------------

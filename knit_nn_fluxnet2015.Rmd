@@ -121,6 +121,11 @@ print( paste("working directory directory:", workingdir ) )
 myhome <- "/alphadata01/bstocker/"
 ```
 
+Get some additional utility functions, mostly needed for plotting
+```{r}
+source("utils_fluxnet2015.R")
+```
+
 ### 2. Data processing
 The data file `./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata` contains for each site all the data used for the NN training and all subsequent analyses. The scripts used to process downloaded data are not provided here but steps are described below.
 
@@ -285,18 +290,18 @@ df_nona <- cleandata_nn( df_nona, nam_target )
 The code below executes the profiling by soil moisture using MODIS EVI data (argument `nam_target="lue_obs_evi"`). Alternatively, use MODIS FPAR data (`nam_target="lue_obs_fpar"`). If the argument `makepdf=TRUE`, this creates diagnostic plots in subdirectory `./fig_nn_fluxnet2015`, otherwise plots are printed to screen. To speed up things, only one NN is trained only with soil moisture data from one dataset (`varnams_swc=c("soilm_swbm")`), only one repetition for averaging (`nrep=2`), and reduced numbers of soil moisture thresholds sampled (`soilm_threshold=seq( 0.45, 0.55, 0.05 )`). Still, this takes a while - be patient. For the published study, we sampled the a wider range of thresholds (`soilm_threshold = seq( 0.1, 0.60, 0.05 )`) and all available soil moisture datasets (`varnams_swc = c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_etobs", "soilm_etobs_ob" )`).
 ```{r message=FALSE, warning=FALSE}
 source('profile_soilm_neuralnet.R')
-profile_soilm_neuralnet(
-  "FR-Pue",
-  nam_target="lue_obs_evi",
-  outdir="./data/profile/",
-  soilm_threshold=seq( 0.45, 0.55, 0.05 ), ## reduced range to speed up things
-  varnams_swc=c("soilm_swbm"),  ## only SWBM soil moisture to speed up things
-  packages="nnet",
-  nrep=2,
-  makepdf=FALSE,
-  use_weights=FALSE,
-  overwrite_profile=TRUE
-  )
+# profile_soilm_neuralnet(
+#   "FR-Pue",
+#   nam_target="lue_obs_evi",
+#   outdir="./data/profile/",
+#   soilm_threshold=seq( 0.45, 0.55, 0.05 ), ## reduced range to speed up things
+#   varnams_swc=c("soilm_swbm"),  ## only SWBM soil moisture to speed up things
+#   packages="nnet",
+#   nrep=2,
+#   makepdf=FALSE,
+#   use_weights=FALSE,
+#   overwrite_profile=TRUE
+#   )
 ```
 
 The full data from the profiling is now stored in the file `./data/profile/profile_evi_nn_FR-Pue.Rdata`. The best-performing soil moisture threshold (soil water contant as afraction) for dataset `soilm_swbm` is:
@@ -480,7 +485,7 @@ Up to this point, all steps are carried out for one single example site and outp
 # }
 ```
 Note that this stores data not in `./data/` but in `{r} print( paste( myhome, "/data/nn_fluxnet/fvar/", sep="" ) )`. Once data is downloaded and extracted, get the success code and performance statistics for all sites in one dataframe and write it to the file `./successcodes.csv`.
-```{r message=FALSE, warning=FALSE}
+```{r nn_getfail_fluxnet2015, message=FALSE, warning=FALSE}
 source( "nn_getfail_fluxnet2015.R" )
 ```
 
@@ -490,7 +495,7 @@ Out of the 135 sites for which the profiling was carried out (consistent soil mo
 
 #### Statistics for overview table
 Create a table that stores all the statistics evaluated for each site and that is finally used to create plot S6 if the paper. It is created here and complemented by additional evaluations in subsequent steps.
-```{r warning=FALSE}
+```{r get_overview_L1, warning=FALSE}
 source( "get_overview_L1.R" )
 ```
 
@@ -501,40 +506,18 @@ knitr::kable( head( overview, n=7 ), caption = "**Table**: First seven rows of o
 
 #### Fit functional form: fLUE versus soil moisture
 Fit a quadratic function to the relationship between fLUE and soil moisture for each site. This creates figures in `./fig_nn_fluxnet2015/fvar_vs_soilm/`, and stores data for all sites in `data/fvar_vs_soilm.Rdata` (medians of fLUE by soil moisture 20%-quantiles) and `data/fitparams.Rdata` (fit parameters of quadratic fit function). This also complements the overview table, stored as `data/overview_data_fluxnet2015_L2.Rdata`. The figures included below are three examples of the fit figures created for all sites (see Figure S12 in SI of paper).
-```{r warning=FALSE}
+```{r fit_fvar_vs_soilm_nn_fluxnet2015, warning=FALSE}
 system( "mkdir -p ./fig_nn_fluxnet2015/fvar_vs_soilm" )
 source( "fit_fvar_vs_soilm_nn_fluxnet2015.R" )
 ```
 
 #### Aggregate data and read complementary data
-This aggregates site-specific data into one big dataframe holding all sites' data (used for additional plotting) and complements it with additional data (CCI and PRI) and creates corresponding aggregated dataframes holding MOIDS GPP and FLUXCOM MTE data. 
-
-MODIS GPP and FLUXCOM MTE data is given at a time step of 8 days and can thus not be combined with the daily dataframes `nice` and `nice_agg` that are used for all other analyses. Therefore, MODIS GPP and FLUXCOM MTE data is complemented with the mean of data from `nice` across the 8 days period for which they are representative. This is the corresponding code bit (the same is done to get `nice_to_mte`):
-```{r eval=FALSE}
-## Make 'nice' dataframe conform with 'modis'. Take mean of all variables across days for which year_dec is within four +/- 4 days of the modis date
-nice_to_modis <- c()
-for (idx in 1:nrow(modis)){
-  sub <- dplyr::filter( nice, year_dec>=(modis$year_dec[idx] - 4/365 ) & year_dec<=(modis$year_dec[idx] + 4/365) )
-  addline <- unlist( unname( apply( sub, 2, FUN=mean, na.rm=TRUE ) ) )
-  nice_to_modis <- rbind( nice_to_modis, addline )
-}
-```
-Note that the script `aggregate_nn_fluxnet2015.R` (executed below) tries to read files `data/gpp_mte_rf_fluxnet_tramontana/GPP_8Days_4Beni.csv` and `data/gpp_mte_rf_fluxnet_tramontana/GPP_Daily_4Beni.csv`. These are not publicly available and if not present, then reading this is ignored. To get these files, contact Gianluca Tramontana directly (g.tramontana@unitus.it). *Note to internal: These files are on Imperial's CX1*
-
-The script also tries to read files `data/modis_gpp_fluxnet_cutouts_tseries/<sitename>/gpp_8d_modissubset_<sitename>.csv`. These are downloaded from MODIS using the R package `MODISTools`, as described for EVI in Section 'Greenness data (fAPAR)'. If not present, then reading this data is ignored. *Note to internal: These files are on Imperial's CX1*
-
-The script also tries to read files containing CCI and PRI data for European flux stations (`data/pri_cci_fluxnet_from_marcos/data_euroflux_modis.Rdata`). This data is not publicly available and prepared by Marcos Fernandez-Martinez. If not present, then reading this data is ignored. *Note to internal: These files are on Imperial's CX1*
-
-This also complements the overview table, stored as `data/overview_data_fluxnet2015_L3.Rdata`.
- 
-Finally, the script creates files with the aggregated and complemented data:
+This aggregates site-specific data into one big dataframe holding all sites' data (used for additional plotting). It also complements the overview table, stored as `data/overview_data_fluxnet2015_L3.Rdata`. Finally, the script creates files with the aggregated and complemented data:
 
 - `./data/nice_agg_lue_obs_evi.Rdata`
-- `./data/nice_mte_agg_lue_obs_evi.Rdata` (if FLUXCOM MTE data is available)
-- `./data/nice_modis_agg_lue_obs_evi.Rdata` (if MODIS GPP data is available)
 
-```{r warning=FALSE}
-source( "aggregate_nn_fluxnet2015.R" )
+```{r aggregate_nn_fluxnet2015, warning=FALSE}
+# source( "aggregate_nn_fluxnet2015.R" )
 ```
 
 #### Create plots
@@ -545,7 +528,7 @@ plot_bysite_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE,
 ```
 
 To get plots for all sites, do 
-```{r message=FALSE}
+```{r execute_plot_bysite_nn_fluxnet2015, message=FALSE}
 system( "mkdir -p ./fig_nn_fluxnet2015/panel_potentialgpp/" )
 source( "execute_plot_bysite_nn_fluxnet2015.R" )
 ```
@@ -570,16 +553,14 @@ print( "content of returned list:" ); ls( out )
 The script `execute_reshape_align_nn_fluxnet2015()` executes this function for all sites where fLUE droughts are identified (`successcode==1`) and combines dataframes into combined large dataframes containing all sites' data, saved in `data/data_aligned_agg.Rdata`:
 
 - `df_dday_agg`
-- `df_dday_modis_agg`
-- `df_dday_mte_agg`
 - `df_dday_aggbydday_agg`
 
-```{r warning=FALSE}
+```{r execute_reshape_align_nn_fluxnet2015, warning=FALSE}
 source( "execute_reshape_align_nn_fluxnet2015.R" )
 ```
 
 #### Create plots
-Panel plots for soil moisture, fLUE, EVI, CCI, and model biases, all aligned by fLUE drought onset and aggregated across drought events (Fig. 2 in paper main text), are created by the function `plot_aligned_nn_fluxnet2015()`: 
+Panel plots for soil moisture, fLUE, EVI, CCI, and model biases, all aligned by fLUE drought onset and aggregated across drought events (Fig. 2 in paper main text), are created by the function `plot_aligned_nn_fluxnet2015()`:
 ```{r}
 source( "plot_aligned_nn_fluxnet2015.R" )
 plot_aligned_nn_fluxnet2015( "FR-Pue", nam_target="lue_obs_evi", use_fapar=FALSE, use_weights=FALSE, makepdf=FALSE )
@@ -605,7 +586,7 @@ source("cluster_step1_nn_fluxnet2015.R")
 ```
 
 #### Step 2
-Remaining sites (red and blue bars in histogram above) are grouped by their parallel greenness and fLUE response during droughts. 
+Remaining sites (red and blue bars in histogram above) are grouped by their parallel greenness and fLUE response during droughts.
 
 - **cluster 2**: No (or very small) greenness change, and modest fLUE change
 - **cluster 1**: Pronounced greenness change, and strong fLUE change
@@ -639,30 +620,29 @@ At this point, all analyses are completed. Remaining steps create (remaining) fi
 #### Evaluate pooled data
 The script `plot_agg_nn_fluxnet2015.R` produces the following figures:
 
-- `fig_nn_fluxnet2015/modobs/modobs_gpp_rct_ALL_FROMNICE.pdf`: Fig. S2 in Supplementary Information. Evaluates NN performance based on GPP.
-- `fig_nn_fluxnet2015/modobs/modobs_lue_rct_ALL_FROMNICE.pdf`: Fig. S3 in Supplementary Information. Evaluates NN performance based on LUE.
-- `fig_nn_fluxnet2015/bias_vs_fvar/bias_vs_fvar_ALL.pdf`: Fig. 5 in paper, main text. Compares GPP model bias against fLUE.
-- `fig_nn_fluxnet2015/cci_vs_gpp/evi_vs_gpp_ALL`: Fig. S10 (bottom left) in Supplementary Information. Compares EVI against observed GPP.
-- `fig_nn_fluxnet2015/cci_vs_gpp/cci_vs_gpp_ALL.pdf`: Fig. S10 (upper left) in Supplementary Information. Compares CCI against observed GPP. Due to restricted public availability of CCI and PRI data, this figure is not produced.
-- `fig_nn_fluxnet2015/cci_vs_gpp/pri_vs_gpp_ALL`: Fig. S10 (top right) in Supplementary Information. Compares PRI against observed GPP. Due to restricted public availability of CCI and PRI data, this figure is not produced.
-- `fig_nn_fluxnet2015/cci_vs_fvar/pri_vs_fvar_ALL.pdf` and `"fig_nn_fluxnet2015/cci_vs_fvar/pri_vs_fvar_<sitename>.pdf"`: Fig. 6 in paper, main text. Compares CCI and PRI change versus fLUE during fLUE droughts, pooled sites and individual sites. Due to restricted public availability of CCI and PRI data, this figure is not produced.
-- `fig_nn_fluxnet2015/fpar_vs_evi.pdf`: Fig. S11 in Supplementary Information. Compares EVI and FPAR.
+- `fig_nn_fluxnet2015/boxplot_fluedrought_vs_alpha_spi_spei_1mo.pdf`: Fig. 8 in paper. Boxplots for SPI, SPEI, and AET/PET distributions during fLUE droughts and non-droughts.
+- `fig_nn_fluxnet2015/modobs/modobs_gpp_rct_ALL_FROMNICE.pdf`: Fig. 2 in paper. Modelled versus observed scatterplots, evaluating NN performance based on GPP.
+- `fig_nn_fluxnet2015/modobs/modobs_lue_rct_ALL_FROMNICE.pdf`: Fig. S3 in Supplementary Information. Modelled versus observed scatterplots, evaluating NN performance based on LUE
+- `fig_nn_fluxnet2015/fpar_vs_evi.pdf`: Fig. S1 in Supplementary Information. Scatterplot of MODIS FPAR versus EVI.
 
-```{r message=FALSE, warning=FALSE}
+```{r plot_agg_nn_fluxnet2015, message=FALSE, warning=FALSE}
 source("plot_agg_nn_fluxnet2015.R")
 ```
 
 #### Evaluate pooled data by clusters
 The script `plot_bycluster_nn_fluxnet2015.R` produces the following figures:
 
-- `fig_nn_fluxnet2015/fvar_vs_soilm/fvar_vs_soilm_agg_ALL.pdf`: Fig. 4 in the main text of the paper. Functional form of fLUE versus soil moisture, by cluster.
-- `"fig_nn_fluxnet2015/aligned_cluster/aligned_cluster.pdf`: Fig. 3 in the main text of the paper. fLUE and EVI/EVI$_0$ during fLUE droughts for clusters 1 and 2.
+- `./fig_nn_fluxnet2015/vpd_vs_soilm/vpd_vs_soilm_lue_obs_evi_ALL.pdf`: Fig. S6 in Supplementary Information. Scatterplot of VPD versus soil moisture and boxplot of VPD distribution during dry and moist days.
+- `fig_nn_fluxnet2015/fvar_vs_soilm/fvar_vs_soilm_agg_ALL.pdf`: Fig. 7 in the main text of the paper. Functional form of fLUE versus soil moisture, by cluster.
+- `fig_nn_fluxnet2015/aligned_cluster/aligned_cluster_3rows.pdf`: Fig. 3 in the main text of the paper. fLUE and EVI/EVI$_0$ during fLUE droughts for clusters 1 and 2.
 
 ```{r message=FALSE, warning=FALSE}
 source("plot_bycluster_nn_fluxnet2015.R")
 ```
 
-#### Evaluate clusters by sites
+#### Evaluate cluster (climate, vegetation type, etc.)
+**Overview "heat table"**
+
 The script `plot_overview_nn_fluxnet2015.R` combines the overview table (`data/overview_data_fluxnet2015_L5.Rdata`) with complementary site data extracted from global datasets:
 
 - Water table depth from Fan & Miguez-Macho (2013). Dataframe `df_wtd` from `./data/wtd_fluxnet2015.Rdata`. Data prepared by `get_watertable_fluxnet2015.R`. Original files downloaded on May 16, 2017 from [glowasis.deltares.nl](https://glowasis.deltares.nl/thredds/catalog/opendap/opendap/Equilibrium_Water_Table/catalog.html?dataset=glowasis/opendap/Equilibrium_Water_Table/Eurasia_model_wtd_v2.nc), selecting `/thredds/fileServer/opendap/opendap/Equilibrium_Water_Table/Eurasia_model_wtd_v2.nc`
@@ -675,27 +655,31 @@ Complemented overview table is saved as `data/overview_data_fluxnet2015_L6.Rdata
 
 The script produces the following figures:
 
-- `fig_nn_fluxnet2015/overview_clusterX.pdf` where `X` is 1, 2, 3 and 4. This is the colored overview table of all sites, grouped by cluster. Fig. S6 in Supplementary Information
-- `fig_nn_fluxnet2015/boxplot_AI_by_cluster.pdf`: A boxplot for aridity index by cluster. Fig. S9 (left) in Supplementary Information.
-- `fig_nn_fluxnet2015/boxplot_alpha_by_cluster.pdf`: A boxplot for mean PET/AET index by cluster. Fig. S9 (right) in Supplementary Information.
-- `fig_nn_fluxnet2015/corr_fvar_vs_dfapar.pdf`: Correlation between fLUE$_0$ versus greenness change (1 - EVI/EVI$_0$). Fig. S8 in Supplementary Information.
-- `fig_nn_fluxnet2015/cluster_map.pdf`: Sites on a global map, marked by cluster. Fig. S7 in Supplementary Information.
+- `fig_nn_fluxnet2015/overview_clusterX.pdf` where `X` is 1, 2, 3 and 4. This is the colored overview table of all sites, grouped by cluster. Fig. S5 in Supplementary Information
 
 This script also evaluates the correlation of water table depth site data from Fan & Miguez-Macho (2013) compared with De Graaf et al. (2015).
-
-XXXX add descriptions here
 ```{r message=FALSE, warning=FALSE}
 source("plot_overview_nn_fluxnet2015.R")
 ```
 
+**Sites across climate space (Fig. 9)**
+
+The script `plot_sites_climatespace.R` creates a panel plot, illustrating the locations of sites in Budyko space and the relationship of annual percent GPP loss and maximum LUE reduction with AET/PET and the change in greenness. The figure `sites_climatespace.pdf` is used in the paper as Fig. 9
+```{r message=FALSE, warning=FALSE}
+source("plot_sites_climatespace.R")
+```
+
+**Map of PET/P and sites locations (Fig. 10)**
+
+The script `plot_map_greve.R` creates a global map of PET/P (=aridity index) with symbols illustrating site locations, including distributions of the aridity index and AET/PET by clusters. This is Fig. 10 in paper. Plotting the map requires loading the NetCDF file that contains global data on PET/P from Greve et al. (2014). However, this is not made publicly available. Therefore, the script just plots a constant field with value 1 as a map.
+The figure `map_greve.pdf` is used in the paper as Fig. 10.
 ```{r message=FALSE, warning=FALSE}
 source("plot_map_greve.R")
 ```
 
-```{r message=FALSE, warning=FALSE}
+#### Evaluate NN sensitivity to VPD
+The script `evaluate_sensitivity_soilm_vpd.R` evaluates the sensitivity of NNs to VPD and the bias of their predictions of LUE under moist and dry conditions. Figure `vpd_soilmoisture_test.pdf` is created and used in the paper as Fig. 3. Execution of this script requires the full profile files. Due to their large size, they are not distributed here and the script thus cannot be executed.
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
 source("evaluate_sensitivity_soilm_vpd.R")
 ```
 
-```{r message=FALSE, warning=FALSE}
-source("plot_sites_climatespace.R")
-```

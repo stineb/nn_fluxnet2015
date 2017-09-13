@@ -4,6 +4,7 @@ library( cgwtools )
 source( "remove_outliers.R" )
 source( "get_spi_spei.R" )
 source( "get_anom_bydoy.R" )
+source( "movingAverage.R" )
 
 ##------------------------------------------------
 ## Select all sites for which method worked (codes 1 and 2 determined by 'nn_getfail_fluxnet2015.R')
@@ -20,6 +21,7 @@ package    = "nnet"
 overwrite_modis = FALSE
 overwrite_mte = FALSE
 verbose    = FALSE
+testprofile = TRUE
 ##---------------------------------
 
 siteinfo <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
@@ -29,12 +31,11 @@ siteinfo <- read.csv( "siteinfo_fluxnet2015_sofun.csv" )
 ##------------------------------------------------
 load( "data/overview_data_fluxnet2015_L2.Rdata" )
 
-
 ##------------------------------------------------
 ## Initialise aggregated data
 ##------------------------------------------------
 ## fvar and soilm data to be complemented with cluster info
-nice_agg          <- data.frame()
+nice_agg <- data.frame()
 
 ## check and override if necessary
 if ( nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar" ){
@@ -87,66 +88,70 @@ for (sitename in do.sites){
   jdx <- jdx + 1
   missing_mte <- FALSE
 
-  infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" ) 
+  if (testprofile){
+    infil <- paste( "data/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+    if (!file.exists(infil)){
+      print(paste( "File", infil, "not found. Are they properly downloaded from bstocker.net and stored in ./data/fvar/ ?"))
+    }
+  } else {
+    infil <- paste( myhome, "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_", nam_target, char_wgt, char_fapar, ".Rdata", sep="" )
+  }
+
   if (verbose) print( paste( "opening file", infil ) )
 
   ##------------------------------------------------
   ## load nn_fVAR data and "detatch"
   ##------------------------------------------------
-    load( infil ) ## gets list 'nn_fluxnet'
-    nice             <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )            
-    varnams_swc      <- nn_fluxnet[[ sitename ]]$varnams_swc    
-    varnams_swc_obs  <- nn_fluxnet[[ sitename ]]$varnams_swc_obs
+  load( infil ) ## gets list 'nn_fluxnet'
+  nice             <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )            
+  varnams_swc      <- nn_fluxnet[[ sitename ]]$varnams_swc    
+  varnams_swc_obs  <- nn_fluxnet[[ sitename ]]$varnams_swc_obs
 
-    ## For SD-Dem, overwrite measured soil moisture - it's probably wrong as it does not fall below 0.25 or so
-    if (sitename == "SD-Dem"){
-      varnams_swc_mod <- varnams_swc[ !is.element( varnams_swc, varnams_swc_obs ) ]
-      nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_mod)), 1, FUN=mean, na.rm=TRUE )
-      nice$soilm_mean[ is.nan( nice$soilm_mean ) ] <- NA
-    }
-
-    ## Add information of EVI extremes and moving average fvar (preceeding 365 days)
-    out_evianomalies <- nn_fluxnet[[ sitename ]]$out_evianomalies; fapar_extremes <- out_evianomalies$extremes
-    nice$is_fapar_extreme <- rep( FALSE, nrow(nice) )
-    for (iinst in nrow(fapar_extremes)){
-      nice$is_fapar_extreme[ fapar_extremes$idx_start[iinst]:(fapar_extremes$idx_start[iinst]+fapar_extremes$len[iinst]-1) ] <- TRUE
-    }
-    tmp <- approx( nice$year_dec, nice$fvar, xout=nice$year_dec )$y
-    nice$fvar_rollmean <- movingAverage( tmp, 365, centered=FALSE )
-
-    ## Add SPI and SPEI data
-    load( "./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata" )
-    mdf_spei <- get_spi_bysite( sitename )
-    nice <- nice %>%  dplyr::select( -contains("spi1"), -contains("spi3"), -contains("spei1"), -contains("spei3") ) %>% 
-                      left_join( dplyr::select( mdf_spei, year, moy, spi1, spi3, spei1, spei3 ), by=c("year", "moy") )
-
-    ## add soil moisture anomaly
-    nice$soilm_mean_anom <- get_anom_bydoy( nice )
-
-    ## add row to aggregated data
-    mysitename <- data.frame( mysitename=rep( sitename, nrow(nice) ) )
-
-    if (nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar"){
-      nice <- nice %>% mutate( gpp_nn_act = var_nn_act * evi * ppfd, gpp_nn_pot = var_nn_pot * evi * ppfd, gpp_nn_vpd = var_nn_vpd * evi * ppfd )
-    } else {
-      nice <- nice %>% mutate( gpp_nn_act = var_nn_act, gpp_nn_pot = var_nn_pot, gpp_nn_vpd = var_nn_vpd )
-    }
-
-    ## fill with NA if respective soil moisture data was not used
-    for (isoilm in varnams_swc_full){
-      if ( !is.element( paste( "var_nn_act_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-      if ( !is.element( paste( "var_nn_pot_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-      if ( !is.element( paste( "var_nn_vpd_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-      if ( !is.element( paste( "moist_",      isoilm, sep="" ), names(nice) ) ) nice[[ paste( "moist_",      isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
-    }
-    
+  ## For SD-Dem, overwrite measured soil moisture - it's probably wrong as it does not fall below 0.25 or so
+  if (sitename == "SD-Dem"){
+    varnams_swc_mod <- varnams_swc[ !is.element( varnams_swc, varnams_swc_obs ) ]
+    nice$soilm_mean <- apply( dplyr::select( nice, one_of(varnams_swc_mod)), 1, FUN=mean, na.rm=TRUE )
+    nice$soilm_mean[ is.nan( nice$soilm_mean ) ] <- NA
   }
 
+  ## Add information of EVI extremes and moving average fvar (preceeding 365 days)
+  out_evianomalies <- nn_fluxnet[[ sitename ]]$out_evianomalies; fapar_extremes <- out_evianomalies$extremes
+  nice$is_fapar_extreme <- rep( FALSE, nrow(nice) )
+  for (iinst in nrow(fapar_extremes)){
+    nice$is_fapar_extreme[ fapar_extremes$idx_start[iinst]:(fapar_extremes$idx_start[iinst]+fapar_extremes$len[iinst]-1) ] <- TRUE
+  }
+  tmp <- approx( nice$year_dec, nice$fvar, xout=nice$year_dec )$y
+  nice$fvar_rollmean <- movingAverage( tmp, 365, centered=FALSE )
+
+  ## Add SPI and SPEI data
+  load( "./data/modobs_fluxnet2015_s11_s12_s13_with_SWC_v3.Rdata" )
+  mdf_spei <- get_spi_bysite( sitename, dplyr::filter( siteinfo, mysitename==sitename)$lat )
+  nice <- nice %>%  dplyr::select( -contains("spi1"), -contains("spi3"), -contains("spei1"), -contains("spei3") ) %>% 
+                    left_join( dplyr::select( mdf_spei, year, moy, spi1, spi3, spei1, spei3 ), by=c("year", "moy") )
+
+  ## add soil moisture anomaly
+  nice$soilm_mean_anom <- get_anom_bydoy( nice )
+
+  ## add row to aggregated data
+  mysitename <- data.frame( mysitename=rep( sitename, nrow(nice) ) )
+
+  if (nam_target=="lue_obs_evi" || nam_target=="lue_obs_fpar"){
+    nice <- nice %>% mutate( gpp_nn_act = var_nn_act * evi * ppfd, gpp_nn_pot = var_nn_pot * evi * ppfd, gpp_nn_vpd = var_nn_vpd * evi * ppfd )
+  } else {
+    nice <- nice %>% mutate( gpp_nn_act = var_nn_act, gpp_nn_pot = var_nn_pot, gpp_nn_vpd = var_nn_vpd )
+  }
+
+  ## fill with NA if respective soil moisture data was not used
+  for (isoilm in varnams_swc_full){
+    if ( !is.element( paste( "var_nn_act_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_act_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+    if ( !is.element( paste( "var_nn_pot_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_pot_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+    if ( !is.element( paste( "var_nn_vpd_", isoilm, sep="" ), names(nice) ) ) nice[[ paste( "var_nn_vpd_", isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+    if ( !is.element( paste( "moist_",      isoilm, sep="" ), names(nice) ) ) nice[[ paste( "moist_",      isoilm, sep="" ) ]] <- rep( NA, nrow(nice) )
+  }
+    
   ##------------------------------------------------
   ## Re-save data after additions to 'nice' dataframe
   ##------------------------------------------------
-  # if (verbose) print( paste( "resaving nice into file", infil ) )
-  # if (verbose) print( "names:" ); print( names(nice) )
   nn_fluxnet[[ sitename ]]$nice <- nice
   resave( nn_fluxnet, file=infil )
 
@@ -167,8 +172,6 @@ for (sitename in do.sites){
                 "ppfd", 
                 "fvar",
                 "fvar_rollmean", 
-                "bias_pmodel", 
-                "ratio_obs_mod", 
                 "soilm_mean",
                 "vpd",
                 "is_drought_byvar", 
@@ -223,7 +226,6 @@ for (sitename in do.sites){
     nice_resh <- rbind( nice_resh, addrows )
   }
 
-
 }
 
 print("... done.")
@@ -233,6 +235,7 @@ if ( length( dplyr::filter( successcodes, successcode==1 | successcode==2 )$mysi
   ## save collected data
   ##------------------------------------------------
   save( nice_agg, file=paste( "data/nice_agg_", nam_target, char_fapar, ".Rdata", sep="") )
+  save( nice_resh, file="data/nice_resh_lue_obs_evi.Rdata" )
   save( overview, file="data/overview_data_fluxnet2015_L3.Rdata" )
 
 } else {
