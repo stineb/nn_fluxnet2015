@@ -1,5 +1,7 @@
 # NN FLUXNET
 
+[![DOI](https://zenodo.org/badge/95237025.svg)](https://zenodo.org/badge/latestdoi/95237025)
+
 This repository contains all R code to reproduce the analysis used for the paper *Quantifying soil moisture control on light use efficiency across biomes*.
 
 A detailed description of the scope, method, and algorithms is given by the RMarkdown file `knit_nn_fluxnet2015.Rmd`. 
