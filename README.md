@@ -16,6 +16,6 @@ install.packages("rmarkdown", type = "source")
 rmarkdown::render_site()
 ```
 
-Please also note the data use policy, described in `./knit_nn_fluxnet2015.Rmd` and `./LICENSE`.
+Please also note the data use policy, described in `./knit_nn_fluxnet2015.Rmd` and `./LICENSE`. When using this code, please cite the paper Stocker et al. (submitted).
 
 beni stocker, 27.6.2017

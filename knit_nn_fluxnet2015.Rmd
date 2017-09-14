@@ -1,6 +1,6 @@
 ---
 title: "Extended Methods for paper *Quantifying soil moisture impacts on light use efficiency across biomes*"
-author: "B. Stocker et al."
+author: "B. D. Stocker et al."
 # date: "`r Sys.Date()`"
 output:
   html_document:
