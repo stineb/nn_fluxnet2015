@@ -3,10 +3,10 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
   # ## XXX debug----------------
   # sitename   = "AU-Dry"
   # nam_target = "lue_obs_evi"
-  # use_weights= FALSE    
+  # use_weights= FALSE
   # use_fapar  = FALSE
   # recalc     = TRUE
-  # testprofile= FALSE
+  # testprofile= TRUE
   # code       = 1
   # makepdf    = FALSE
   # verbose    = TRUE
