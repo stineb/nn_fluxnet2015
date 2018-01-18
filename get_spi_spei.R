@@ -14,7 +14,7 @@ get_spi_bysite <- function( sitename, lat ){
   ##----------------------
 
   ## get precipitation
-  path <- paste( "./input_fluxnet2015_sofun/sitedata/climate/", sitename, "/clim_daily_byst_", sitename, ".csv", sep="" )
+  path <- paste( "../sofun/input_fluxnet2015_sofun/sitedata/climate/", sitename, "/clim_daily_byst_", sitename, ".csv", sep="" )
   ddf <- try( read.csv( path ) )
 
   ## do spi only with watch data
