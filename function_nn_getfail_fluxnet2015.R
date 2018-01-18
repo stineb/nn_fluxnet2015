@@ -173,6 +173,7 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
     ## * RMSE of NNgood vs. NNall during good days
     ##------------------------------------------------
     failed <- FALSE
+    sc_lev <- NA
 
     ndays <- nice %>% dplyr::filter( !is.na(fvar) ) %>% nrow()
 
@@ -181,23 +182,23 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
 
     ## * during droughts NNgood is lower than NNall
     if ( nrow(droughtdays) > 0 ){
-      if ( mean( droughtdays$var_nn_pot, na.rm=TRUE ) < mean( droughtdays$var_nn_act, na.rm=TRUE ) ) failed <- TRUE 
+      if ( mean( droughtdays$var_nn_pot, na.rm=TRUE ) < mean( droughtdays$var_nn_act, na.rm=TRUE ) ) { failed <- TRUE; sc_lev <- 2 } 
     }
 
     ## * R2 of NNall
-    if ( stats$out_NNall$rmse > 2.8 || stats$out_NNall$rsq < 0.5 ) failed <- TRUE
+    if ( stats$out_NNall$rmse > 2.8 || stats$out_NNall$rsq < 0.5 ) { failed <- TRUE; sc_lev <- 2 }
 
     ## * R2 of NNgood vs. observed during good days
-    if ( stats$out_NNgood$prmse > 80 || stats$out_NNgood$rsq < 0.3 ) failed <- TRUE
+    if ( stats$out_NNgood$prmse > 80 || stats$out_NNgood$rsq < 0.3 ) { failed <- TRUE; sc_lev <- 2 }
 
     ## * R2 of NNall during bad days has no big bias
     if ( nrow(droughtdays)>0.02*nrow(nondrgtdays) ){
       # if ( stats$out_NNallbad$ptoohi > 0.7 || stats$out_NNallbad$rsq < 0.2 ) failed <- TRUE
-      if ( stats$out_NNallbad$rsq < 0.17 || stats$out_NNallbad$ptoohi > 0.88 || stats$out_NNallbad$prmse > 76 ) failed <- TRUE
+      if ( stats$out_NNallbad$rsq < 0.17 || stats$out_NNallbad$ptoohi > 0.88 || stats$out_NNallbad$prmse > 76 ) { failed <- TRUE; sc_lev <- 3 }
     }
 
     ## * RMSE of NNgood vs. NNall during good days
-    if ( stats$out_NNNN$rsq < 0.5 || stats$out_NNNN$rmse > 1.6 ) failed <- TRUE
+    if ( stats$out_NNNN$rsq < 0.5 || stats$out_NNNN$rmse > 1.6 ) { failed <- TRUE; sc_lev <- 3 }
 
     # ## delete panel file
     # dir <- paste( myhome, "sofun/utils_sofun/analysis_sofun/fluxnet2015/fig_nn_fluxnet2015/panel_potentialgpp/", sep="")
@@ -232,9 +233,13 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
       successcode <- 1
     }
 
+    if (ndays < 500) { sc_lev <- 1 }
+
     out <- data.frame(
-                      mysitename=sitename, successcode=successcode,
+                      mysitename=sitename, 
+                      successcode=successcode,
                       ndays=ndays,
+                      sc_lev=sc_lev,
 
                       NNallbad_prmse=stats$out_NNallbad$prmse,
                       NNallbad_rmse=stats$out_NNallbad$rmse,
@@ -289,6 +294,7 @@ nn_getfail_fluxnet <- function( sitename, code=NA, recalc=TRUE, nam_target="lue_
     out <- data.frame(
                       mysitename=sitename, 
                       successcode=0,
+                      sc_lev=NA,
                       ndays=NA,
 
                       NNallbad_prmse=NA,

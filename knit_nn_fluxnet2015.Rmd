@@ -466,6 +466,8 @@ Sites are excluded from further analysis based on data length and performance st
 4. if LUE$_{\mathrm{act}}$ has an R$^2$ of less than 0.17 during fLUE drought days.
 5. if the R$^2$ of LUE$_{\mathrm{act}}$ versus LUE$_{\mathrm{pot}}$ during non-fLUE drought days is below 0.5 or their RMSE is above 1.6.
 
+Sites excluded upon visual inspection and for which no quantitative criteria are found, are: CN-Din, CZ-BK1, IT-CA1, IT-CA3, IT-Ro2, and US-Me6.
+
 This is implemented by function `nn_getfail_fluxnet()` which returns a dataframe (one row) with all the performance metrics for this site.
 ```{r warning=FALSE, message=FALSE}
 source("function_nn_getfail_fluxnet2015.R")

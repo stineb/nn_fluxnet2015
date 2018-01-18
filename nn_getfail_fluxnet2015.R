@@ -17,7 +17,7 @@ for (idx in 1:nrow(siteinfo)){
 print( "... done" )
 
 # Force exclude by hand - no good criterium found
-force_exclude2 <- c( "CN-Din", "CZ-BK1", "IT-CA1", "IT-CA2", "IT-CA3", "IT-Ro2", "US-Me6", "US-Tw1" )
+force_exclude2 <- c( "CN-Din", "CZ-BK1", "IT-CA1", "IT-CA3", "IT-Ro2", "US-Me6" )
 print( "Force exclusion of the following sites: " )
 print( force_exclude2 )
 successcodes$successcode[ which( is.element(successcodes$mysitename, force_exclude2)) ] <- 3
@@ -28,7 +28,4 @@ print( paste( "number of sites with code 3:", sum(successcodes$successcode==3) )
 print( paste( "number of sites with code 0:", sum(successcodes$successcode==0) ) )
 
 write.csv( successcodes, file="successcodes.csv", row.names=FALSE )
-
-
-
 

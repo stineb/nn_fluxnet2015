@@ -266,7 +266,7 @@ for (sitename in do.sites){
             xlab = "", 
             ylab = "log of modeled/observed", 
             yaxs = "i",
-            at   = c(1,5) ,
+            at   = c(5,1) ,
             xlim = c(0,8),
             outline=FALSE,
             axes=FALSE,
@@ -295,7 +295,7 @@ for (sitename in do.sites){
             xlab  ="", 
             ylab  ="", 
             yaxs  ="i",
-            at   = c(1,5)+1 ,
+            at   = c(5,1)+1 ,
             # xlim  =range(soilm_thrsh_avl)+c(-0.02,0.02),
             add   = TRUE,
             axes  = FALSE,
@@ -320,7 +320,7 @@ for (sitename in do.sites){
             xlab  ="", 
             ylab  ="", 
             yaxs  ="i",
-            at   = c(1,5)+2 ,
+            at   = c(5,1)+2 ,
             # xlim  =range(soilm_thrsh_avl)+c(-0.02,0.02),
             add   = TRUE,
             axes  = FALSE,
@@ -337,7 +337,7 @@ for (sitename in do.sites){
           # # text( 3,   2.5-0.5, as.character(stats_vpdtest$rmse_nn_act_dry   ) )
           # # text( 3+4, 2.5-0.5, as.character(stats_vpdtest$rmse_nn_act_moist ) )
 
-          axis( 1, at=c(2,6), labels=c("low VPD, low soil moisture", "high VPD, high soil moisture"), tick=FALSE, cex.axis=0.8 )
+          axis( 1, at=c(2,6), labels=c("high VPD, high soil moisture", "low VPD, low soil moisture"), tick=FALSE, cex.axis=0.8 )
           # axis( 1 )
           axis( 2 )
           box()        
@@ -392,8 +392,11 @@ for (sitename in do.sites){
 }
 
 ## Save aggregated data
-save( df_vpdtest_agg, df_soilmtest_agg, file="./data/df_agg.Rdata" )
+save( df_vpdtest_agg, df_soilmtest_agg, file="./data/df_vpdtest_agg.Rdata" )
 save( hilo_agg, file="./data/hilo_agg.Rdata" )
+
+load( "./data/df_vpdtest_agg.Rdata" )
+load( "./data/hilo_agg.Rdata" )
 
 ## aggregated plots
 df_vpdtest_agg_aggbyvpd <- df_vpdtest_agg %>% group_by( vpd ) %>% 
@@ -469,7 +472,7 @@ if (makepdf) pdf( plotfiln, width=sum(widths), height=sum(heights) )
     xlab = "", 
     ylab = "log of modeled/observed", 
     yaxs = "i",
-    at   = c(1,5) ,
+    at   = c(5,1) ,
     xlim = c(0,8),
     outline=FALSE,
     axes=FALSE,
@@ -499,7 +502,7 @@ if (makepdf) pdf( plotfiln, width=sum(widths), height=sum(heights) )
     xlab  ="", 
     ylab  ="", 
     yaxs  ="i",
-    at   = c(1,5)+1 ,
+    at   = c(5,1)+1 ,
     # xlim  =range(soilm_thrsh_avl)+c(-0.02,0.02),
     add   = TRUE,
     axes  = FALSE,
@@ -524,7 +527,7 @@ if (makepdf) pdf( plotfiln, width=sum(widths), height=sum(heights) )
     xlab  ="", 
     ylab  ="", 
     yaxs  ="i",
-    at   = c(1,5)+2 ,
+    at   = c(5,1)+2 ,
     # xlim  =range(soilm_thrsh_avl)+c(-0.02,0.02),
     add   = TRUE,
     axes  = FALSE,
@@ -541,7 +544,7 @@ if (makepdf) pdf( plotfiln, width=sum(widths), height=sum(heights) )
   # # text( 3,   2.5-0.5, as.character(stats_vpdtest$rmse_nn_act_dry   ) )
   # # text( 3+4, 2.5-0.5, as.character(stats_vpdtest$rmse_nn_act_moist ) )
 
-  axis( 1, at=c(2,6), labels=c("low VPD, low soil moisture", "high VPD, high soil moisture"), tick=FALSE, cex.axis=0.8 )
+  axis( 1, at=c(2,6), labels=c("high VPD, high soil moisture", "low VPD, low soil moisture"), tick=FALSE, cex.axis=0.8 )
   # axis( 1 )
   axis( 2 )
   box()        
