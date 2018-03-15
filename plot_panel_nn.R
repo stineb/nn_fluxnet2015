@@ -156,8 +156,8 @@ plot_panel_nn <- function( sitename, df, minmax=NULL, nn, dolek, filename, droug
 
     ## solid line for fvar_smooth
     # lines( df$year_dec, df$fvar_filled, col=add_alpha(cols[2],0.3), lwd=1 )
-    lines( df$year_dec, df$fvar_smooth, col=cols[2], lwd=1 )
-    # lines( df$year_dec, df$fvar, col=cols[2], lwd=1 )
+    lines( df$year_dec, df$fvar_smooth, col=cols[2], lwd=1 ) ### this is shown in panels
+    # lines( df$year_dec, df$fvar, col=cols[2], lwd=1 ) ### test
 
     ## Uncertainty range
     polygon( c( minmax$year_dec, rev(minmax$year_dec) ), c( smooth.spline( minmax$year_dec, minmax$fvar_min_filled, spar=0.01 )$y, rev( smooth.spline( minmax$year_dec, minmax$fvar_max_filled, spar=0.01 )$y ) ), border=NA, col=add_alpha(cols[2],0.5) )
