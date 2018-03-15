@@ -37,8 +37,8 @@ for (sitename in do.sites){
    
     } else {
 
-      outdir <- "./data/profile/"
-      filn <- paste( outdir, "profile_light_lue_obs_evi_nn_", sitename, ".Rdata", sep="" )
+      outdir <- "~/data/nn_fluxnet/profile/"
+      filn <- paste0( outdir, "profile_light_lue_obs_evi_nn_", sitename, ".Rdata" )
 
       deleteagain <- FALSE
       if (!file.exists(filn)){
@@ -150,7 +150,7 @@ for (sitename in do.sites){
       ## Predict hihi and lolo values
       ##------------------------------------------------
       ## all data
-      filn <- paste( "data/nn_fluxnet/fvar/nn_fluxnet2015_", sitename, "_lue_obs_evi.Rdata", sep="" )
+      filn <- paste( "data/fvar/nn_fluxnet2015_", sitename, "_lue_obs_evi.Rdata", sep="" )
       load( filn ) ## gets list 'nn_fluxnet'
       nice <- as.data.frame( nn_fluxnet[[ sitename ]]$nice )  
 

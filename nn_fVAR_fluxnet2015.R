@@ -1,16 +1,18 @@
-nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, nrep=5, dotrain=FALSE, package="nnet", makepdf=TRUE, testprofile=FALSE, overwrite=FALSE ){
+# nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ifelse( nam_target=="lue_obs_evi", TRUE, FALSE ), use_fapar=FALSE, nrep=5, dotrain=FALSE, package="nnet", makepdf=TRUE, testprofile=FALSE, overwrite=FALSE ){
 
-  # ## XXX debug----------------
-  # sitename   = "FR-Pue"
-  # nam_target = "lue_obs_evi"
-  # use_weights= FALSE    
-  # use_fapar  = FALSE
-  # package    = "nnet"
-  # dotrain    = FALSE
-  # makepdf    = FALSE
-  # testprofile= TRUE
-  # overwrite  = TRUE
-  # ##--------------------------
+  ## XXX debug----------------
+  sitename   = "IT-Noe"
+  nam_target = "lue_obs_evi"
+  use_weights= FALSE    
+  use_fapar  = FALSE
+  package    = "nnet"
+  dotrain    = TRUE
+  makepdf    = FALSE
+  testprofile= FALSE
+  overwrite  = TRUE
+  workingdir = "~/nn_fluxnet2015"
+  nrep       = 5
+  ##--------------------------
 
   require( dplyr )
   require( abind )
@@ -118,7 +120,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
         data$soilm_etobs_ob  <- fluxnet[[ sitename ]]$ddf$swc_by_etobs$soilm_from_et_orthbucket
 
         if (dotrain){
-          varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_etobs", "soilm_etobs_ob" )
+          varnams_swc <- c( "soilm_splash150", "soilm_splash220", "soilm_swbm", "soilm_etobs", "soilm_etobs_ob", "soilm_obs" )
         } else {
           varnams_swc <- profile_nn_light[[ sitename ]]$varnams_swc
         }
@@ -232,8 +234,9 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
         fvar_by_smdata       <- c()
         moist_by_smdata      <- c()
 
-        do_smdata <- varnams_swc
+        # do_smdata <- varnams_swc
         # do_smdata <- c("soilm_splash220", "soilm_swbm")
+        do_smdata <- c("soilm_obs")
 
         # # xxx try:
         # do_smdata <- do_smdata[-which(do_smdata=="soilm_obs")]
@@ -318,7 +321,6 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
             hidden_good <-  profile_nn_light[[ sitename ]][[ isoilm_data ]]$nnet[[ paste( "smtrh_", as.character( isoilm_trh ), sep="" ) ]]$hidden_best_good
             hidden_all  <-  profile_nn_light[[ sitename ]][[ isoilm_data ]]$nnet$hidden_best_all
 
-
             ##------------------------------------------------
             ## Determine "good days", i.e. where soil moisture is abover threshold
             ##------------------------------------------------
@@ -364,13 +366,13 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                   hidden     = hidden_good
                   )
 
-                ## Evaluate predictions of good days model
-                stats_nn_good <- analyse_modobs( 
-                                                apply( var_nn_good, 1, FUN=mean ) * weights[ idxs_good ], 
-                                                df_nona$gpp_obs[idxs_good], 
-                                                plot.title=paste( "Good, trh=", isoilm_trh, "data=", isoilm_data ), 
-                                                do.plot=FALSE
-                                                )
+                # ## Evaluate predictions of good days model
+                # stats_nn_good <- analyse_modobs( 
+                #                                 apply( var_nn_pot, 1, FUN=mean ) * weights[ idxs_good ], 
+                #                                 df_nona$gpp_obs[idxs_good], 
+                #                                 plot.title=paste( "Good, trh=", isoilm_trh, "data=", isoilm_data ), 
+                #                                 do.plot=FALSE
+                #                                 )
 
                 ##------------------------------------------------
                 ## Bad days GPP (LUE), predicted using the model trained on good days data
@@ -386,15 +388,15 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                   package    = package
                   )
 
-                ## Evaluate predictions of good days model
-                stats_nn_pot <- analyse_modobs( 
-                                                (apply( var_nn_pot, 1,  FUN=mean ) * weights)[-idxs_good], 
-                                                df_nona$gpp_obs[-idxs_good], 
-                                                plot.title=paste( "Bad, trh=", isoilm_trh, "data=", isoilm_data ), 
-                                                do.plot=FALSE
-                                                )
+                # ## Evaluate predictions of good days model
+                # stats_nn_pot <- analyse_modobs( 
+                #                                 (apply( var_nn_pot, 1,  FUN=mean ) * weights)[-idxs_good], 
+                #                                 df_nona$gpp_obs[-idxs_good], 
+                #                                 plot.title=paste( "Bad, trh=", isoilm_trh, "data=", isoilm_data ), 
+                #                                 do.plot=FALSE
+                #                                 )
 
-                print( paste( "R2 of NN-good with soil moisture threshold ", isoilm_trh, "is", stats_nn_good$rsq ) )
+                # print( paste( "R2 of NN-good with soil moisture threshold ", isoilm_trh, "is", stats_nn_good$rsq ) )
 
 
                 ##------------------------------------------------
@@ -422,13 +424,13 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                   hidden     = hidden_all
                   )
 
-                ## get statistics of mod vs. obs of all-days full model
-                stats_nn_act <- analyse_modobs( 
-                                                apply( var_nn_act, 1, FUN=mean ) * weights, 
-                                                df_nona$gpp_obs, 
-                                                plot.title=paste( "All, data=", isoilm_data ), 
-                                                do.plot=FALSE
-                                                )
+                # ## get statistics of mod vs. obs of all-days full model
+                # stats_nn_act <- analyse_modobs( 
+                #                                 apply( var_nn_act, 1, FUN=mean ) * weights, 
+                #                                 df_nona$gpp_obs, 
+                #                                 plot.title=paste( "All, data=", isoilm_data ), 
+                #                                 do.plot=FALSE
+                #                                 )
 
                 ##------------------------------------------------
                 ## Get model without soil moisture as predictor but trained at all data
@@ -447,13 +449,13 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
                   hidden     = hidden_all
                   )
 
-                ## get statistics of mod vs. obs of all-days full model
-                stats_nn_vpd <- analyse_modobs( 
-                                                apply( var_nn_vpd, 1, FUN=mean ) * weights, 
-                                                df_nona$gpp_obs, 
-                                                plot.title=paste( "All, data=", isoilm_data ), 
-                                                do.plot=FALSE
-                                                )              
+                # ## get statistics of mod vs. obs of all-days full model
+                # stats_nn_vpd <- analyse_modobs( 
+                #                                 apply( var_nn_vpd, 1, FUN=mean ) * weights, 
+                #                                 df_nona$gpp_obs, 
+                #                                 plot.title=paste( "All, data=", isoilm_data ), 
+                #                                 do.plot=FALSE
+                #                                 )              
 
                 ## keep only values
                 nn_pot_vals[,irep] <- as.vector( out_nn_pot$vals )
@@ -490,6 +492,10 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
               df_nona$fvar          <- apply( nn_fXX_vals[,], 1, FUN = mean )
               df_nona$fvar_sd       <- apply( nn_fXX_vals[,], 1, FUN = sd )
+
+              df_nona$moist         <- rep( NA, nrow(df_nona) )
+              df_nona$moist[idxs_good]      <- TRUE
+              df_nona$moist[-idxs_good]     <- FALSE
            
             } else {
 
@@ -503,6 +509,11 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
               df_nona$fvar          <- nn_fXX_vals[,1]
               df_nona$fvar_sd       <- nn_fXX_vals[,1]
+
+              df_nona$moist         <- rep( NA, nrow(df_nona) )
+              df_nona$moist[idxs_good]      <- TRUE
+              df_nona$moist[-idxs_good]     <- FALSE
+              
             }
 
           } else if (!is.na(isoilm_trh)) {
@@ -935,7 +946,7 @@ nn_fVAR_fluxnet <- function( sitename, nam_target="lue_obs_evi", use_weights=ife
 
   }
 
-}
+# }
 
 
 
