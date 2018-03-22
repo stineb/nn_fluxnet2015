@@ -18,6 +18,7 @@ install.packages("rmarkdown", type = "source")
 rmarkdown::render_site()
 ```
 
-Please also note the data use policy, described in `./knit_nn_fluxnet2015.Rmd` and `./LICENSE`. When using this code, please cite the paper Stocker et al. (submitted).
+Please also note the data use policy, described in `./knit_nn_fluxnet2015.Rmd` and `./LICENSE`. When using this code, please cite the paper Stocker et al. (2018) *New Phytologist*.
+This code is also available on [Zenodo](https://zenodo.org/record/1181691#.WrN9xJPwbUI), where the latest version corresponds to tag `submission_3 `.
 
 beni stocker, 27.6.2017
